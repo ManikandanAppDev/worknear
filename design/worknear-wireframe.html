@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WorkNear — Wireframes</title>
+<style>
+  :root{
+    --blue:#3D6BFF; --blue-soft:#E8F0FE; --ink:#111827; --bg:#F7F8FC;
+    --muted:#6B7280; --light:#9CA3AF; --border:#E5E7EB; --star:#FBBF24;
+    --green:#22C55E; --green-soft:#D1FAE5; --red:#EF4444; --amber:#F59E0B; --amber-soft:#FEF3C7;
+    --teal:#0EA5A5; --teal-soft:#D7F5F5; --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{margin:0;font-family:'Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#EEF1F7;color:var(--ink)}
+  .page{max-width:1640px;margin:0 auto;padding:40px 28px 80px}
+  h1.title{font-size:30px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 28px;font-size:14px}
+  .flow{margin:46px 0 14px}
+  .flow h2{font-size:20px;margin:0 0 2px;display:flex;align-items:center;gap:10px}
+  .flow .pill{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#fff;background:var(--blue);padding:4px 10px;border-radius:999px}
+  .flow .pill.pro{background:var(--teal)}
+  .flow .pill.admin{background:#7C3AED}
+  .flow p{color:var(--muted);margin:4px 0 0;font-size:13px}
+  .rail{display:flex;gap:26px;overflow-x:auto;padding:24px 4px 30px}
+  .screen{flex:0 0 auto}
+  .cap{font-size:12.5px;font-weight:600;color:#374151;margin:10px 2px 0;text-align:center}
+  .capn{font-size:11px;color:var(--light);text-align:center;margin-top:2px}
+
+  /* icons */
+  .ic{width:20px;height:20px;display:inline-block;vertical-align:middle;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+  .ic.s{width:16px;height:16px}
+  .ic.lg{width:26px;height:26px}
+
+  /* phone */
+  .phone{width:300px;height:640px;background:var(--bg);border-radius:34px;border:9px solid #11161F;
+    box-shadow:0 18px 40px rgba(17,24,39,.18);position:relative;overflow:hidden;display:flex;flex-direction:column}
+  .status{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:11px;font-weight:600;color:var(--ink)}
+  .status .sig{display:flex;gap:5px;align-items:center}
+  .body{flex:1;overflow:hidden;position:relative;padding:6px 16px 0}
+  .body.full{padding:0}
+  .nav{height:60px;background:#fff;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;font-size:9px;color:var(--light);padding-top:2px}
+  .nav .it{display:flex;flex-direction:column;align-items:center;gap:4px}
+  .nav .it.on{color:var(--blue);font-weight:700}
+  .nav .it.teal.on{color:var(--teal)}
+
+  /* atoms */
+  .row{display:flex;align-items:center;gap:10px}
+  .between{display:flex;align-items:center;justify-content:space-between}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px}
+  .btn{background:var(--blue);color:#fff;border:none;border-radius:12px;padding:12px;width:100%;font-size:13px;font-weight:700;text-align:center;display:flex;align-items:center;justify-content:center;gap:7px}
+  .btn.teal{background:var(--teal)}
+  .btn.ghost{background:#fff;color:var(--blue);border:1.5px solid var(--blue)}
+  .btn.ghost.teal{color:var(--teal);border-color:var(--teal)}
+  .btn.sm{padding:7px 14px;width:auto;border-radius:9px;font-size:11px}
+  .chip{font-size:10px;font-weight:700;padding:4px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:4px}
+  .chip.green{background:var(--green-soft);color:#15803D}
+  .chip.amber{background:var(--amber-soft);color:#B45309}
+  .chip.red{background:#FEE2E2;color:#B91C1C}
+  .chip.blue{background:var(--blue-soft);color:var(--blue)}
+  .chip.gray{background:#f1f5f9;color:#475569}
+  .avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#c7d6ff,#9bb4ff);flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#2746b8;font-weight:700;font-size:14px}
+  .avatar.lg{width:80px;height:80px;font-size:24px}
+  .avatar.sm{width:34px;height:34px;font-size:11px}
+  .stars{color:var(--star);font-size:11px;display:inline-flex;align-items:center;gap:3px}
+  .muted{color:var(--muted)}
+  .price{color:var(--blue);font-weight:800}
+  .field{background:#fff;border:1px solid var(--border);border-radius:11px;padding:11px 12px;font-size:12px;color:var(--light);margin-top:8px;display:flex;align-items:center;gap:8px}
+  .label{font-size:11px;font-weight:700;color:#374151;margin-top:12px}
+  .h{font-weight:800}
+  .t-sm{font-size:11px}
+  .t-xs{font-size:10px}
+  .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .catbox{background:#fff;border:1px solid var(--border);border-radius:14px;padding:10px 4px;text-align:center;font-size:9.5px;font-weight:600;color:#374151}
+  .catico{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px}
+  .hero{background:linear-gradient(135deg,#3D6BFF,#5B86FF);border-radius:18px;padding:16px;color:#fff}
+  .search{background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 12px;font-size:12px;color:var(--light);display:flex;align-items:center;gap:8px}
+  .sec-title{font-size:13px;font-weight:800;margin:14px 0 8px}
+  .divider{height:1px;background:var(--border);margin:12px 0}
+  .check{width:20px;height:20px;border-radius:6px;border:1.6px solid var(--border);flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .check.on{background:var(--teal);border-color:var(--teal);color:#fff}
+  .selcard{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px}
+  .selcard.on{border-color:var(--teal);background:var(--teal-soft)}
+  .stepbar{display:flex;align-items:center;gap:6px;margin:2px 0 10px}
+  .stepbar .s{flex:1;height:5px;border-radius:3px;background:var(--border)}
+  .stepbar .s.on{background:var(--teal)}
+  .up{border:1.5px dashed var(--teal);background:var(--teal-soft);border-radius:12px;padding:16px;text-align:center;color:var(--teal);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:14px;padding:12px}
+  .stat .n{font-size:18px;font-weight:800}
+  .stat .l{font-size:10px;color:var(--muted);margin-top:2px}
+  .toggle{width:38px;height:22px;border-radius:999px;background:var(--green);position:relative;flex:0 0 auto}
+  .toggle::after{content:"";position:absolute;width:16px;height:16px;border-radius:50%;background:#fff;top:3px;right:3px}
+  .menurow{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid var(--border);font-size:12px}
+  .menurow .ico-wrap{width:30px;height:30px;border-radius:9px;background:var(--blue-soft);color:var(--blue);display:flex;align-items:center;justify-content:center}
+  .bubble{max-width:78%;padding:9px 11px;border-radius:14px;font-size:11px;line-height:1.4}
+  .bubble.in{background:#fff;border:1px solid var(--border);border-bottom-left-radius:4px}
+  .bubble.out{background:var(--blue);color:#fff;border-bottom-right-radius:4px;margin-left:auto}
+  .photo{background:linear-gradient(135deg,#dbe5ff,#aec4ff);position:relative;display:flex;align-items:flex-end}
+
+  /* desktop admin */
+  .desktop{width:560px;height:380px;background:#fff;border-radius:14px;border:1px solid var(--border);box-shadow:0 18px 40px rgba(17,24,39,.16);overflow:hidden;display:flex}
+  .dt-side{width:148px;background:#0F172A;color:#cbd5e1;padding:14px 10px;font-size:11px}
+  .dt-side .logo{color:#fff;font-weight:800;font-size:14px;margin-bottom:14px;display:flex;gap:7px;align-items:center}
+  .dt-side .mi{padding:8px 10px;border-radius:8px;margin-bottom:3px;display:flex;gap:9px;align-items:center}
+  .dt-side .mi.on{background:var(--blue);color:#fff;font-weight:700}
+  .dt-main{flex:1;background:#F7F8FC;display:flex;flex-direction:column}
+  .dt-top{height:46px;background:#fff;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:12px;font-weight:700}
+  .dt-content{padding:14px;overflow:hidden}
+  .dt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+  table{width:100%;border-collapse:collapse;font-size:10.5px}
+  th{text-align:left;color:var(--muted);font-weight:700;padding:7px 8px;border-bottom:1px solid var(--border)}
+  td{padding:8px;border-bottom:1px solid var(--border)}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+  .legend b{color:var(--ink)}
+  .sw{width:13px;height:13px;border-radius:4px;display:inline-block;vertical-align:-2px;margin-right:5px}
+</style>
+</head>
+<body>
+
+<!-- ===== SVG ICON SPRITE ===== -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9.5 21v-6h5v6"/></symbol>
+  <symbol id="i-booking" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M4 10h16"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/></symbol>
+  <symbol id="i-offer" viewBox="0 0 24 24"><path d="M3 8h18v3a2 2 0 0 1 0 0v8H3v-8M3 8 5 4h14l2 4M12 8v12"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 9h18"/><circle cx="17" cy="13" r="1.4"/></symbol>
+  <symbol id="i-jobs" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5h6v2"/><path d="M3 12h18"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6 .7-4.4 4 1.2 6L12 16.9 6.6 19.3l1.2-6L3.4 9.3l6-.7z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M5 4h3l2 5-2 1c1 2 3 4 5 5l1-2 5 2v3a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5L20 6"/></symbol>
+  <symbol id="i-checkcircle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V5m0 0-4 4m4-4 4 4"/><path d="M4 17v2a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-2"/></symbol>
+  <symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 3 5 13h6l-1 8 8-10h-6z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M15 6a4 4 0 0 0-5 5l-6 6 3 3 6-6a4 4 0 0 0 5-5l-2.5 2.5L17 14l-1.5-1.5L13 10l1.5-1.5z"/></symbol>
+  <symbol id="i-snow" viewBox="0 0 24 24"><path d="M12 2v20M3 7l18 10M21 7 3 17M12 5l3 2-3 2-3-2zM12 19l3-2-3-2-3 2z"/></symbol>
+  <symbol id="i-roller" viewBox="0 0 24 24"><rect x="4" y="4" width="13" height="6" rx="1.5"/><path d="M10 10v3H6v8h4v-8"/></symbol>
+  <symbol id="i-saw" viewBox="0 0 24 24"><path d="M3 7h14l-2 4H3zM3 7v4M6 11v3M9 11v3M12 11v3M17 7l4 2v9"/></symbol>
+  <symbol id="i-broom" viewBox="0 0 24 24"><path d="M19 4 9 14M4 21l5-7 4 4-7 5zM9 14l1-1 4 4-1 1z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-6 16-3-7z"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M14 5l5 5M4 20l1-4L16 5l3 3L8 19z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 24 24"><path d="M4 9 12 4l8 5M5 9v9M19 9v9M9 9v9M15 9v9M3 21h18"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></symbol>
+  <symbol id="i-gift" viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M4 13h16M12 9v11M8.5 9a2.5 2.5 0 1 1 3.5-2.5A2.5 2.5 0 1 1 15.5 9"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.4 2.3c-.8.4-.9.9-.9 1.7M12 17h.01"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M9 12h11m0 0-3-3m3 3-3 3"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M5 3v18l2-1 2 1 2-1 2 1 2-1 2 1V3l-2 1-2-1-2 1-2-1-2 1z"/><path d="M8 8h8M8 12h8"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M5 15c-1 1-1 4-1 4s3 0 4-1M14 4c3 0 6 3 6 6 0 4-5 8-8 9l-3-3c1-3 5-8 9-8M9 13l-2-2"/></symbol>
+  <symbol id="i-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3 2.7-5 6-5s6 2 6 5"/><path d="M16 5.5a3 3 0 0 1 0 5.8M21 20c0-2.4-1.4-4-3.5-4.6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M8 16v-4M12 16V8M16 16v-7"/></symbol>
+  <symbol id="i-toolbox" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="11" rx="2"/><path d="M8 8V6h8v2M3 13h18M10 13v2h4v-2"/></symbol>
+  <symbol id="i-lang" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></symbol>
+  <symbol id="i-skip" viewBox="0 0 24 24"><path d="m6 6 6 6-6 6M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="page">
+  <h1 class="title">WorkNear — App Wireframes</h1>
+  <p class="sub">Nearby home-services marketplace · Customer App · Professional App · Web Admin Panel · clean line-icon UI kit</p>
+  <div class="legend">
+    <span><i class="sw" style="background:#3D6BFF"></i><b>Primary</b> #3D6BFF</span>
+    <span><i class="sw" style="background:#0EA5A5"></i><b>Pro</b> #0EA5A5</span>
+    <span><i class="sw" style="background:#22C55E"></i><b>Success</b></span>
+    <span><i class="sw" style="background:#F59E0B"></i><b>Pending</b></span>
+    <span><i class="sw" style="background:#EF4444"></i><b>Error</b></span>
+  </div>
+
+  <!-- ============ CUSTOMER ============ -->
+  <div class="flow">
+    <h2><span class="pill">Customer</span> Onboarding → Booking → Tracking</h2>
+    <p>Splash → Login (OTP) → Location → Home → Category → Professional → Book → Confirmed → Track/Chat → Wallet → Profile</p>
+  </div>
+  <div class="rail">
+
+    <!-- C1 Splash -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"><svg class="ic s"><use href="#i-bell"/></svg></span></div>
+        <div class="body" style="display:flex;flex-direction:column">
+          <div class="photo" style="height:250px;border-radius:18px;padding:14px;color:#fff">
+            <div style="position:absolute;top:12px;right:14px;font-size:11px;color:#1e3a8a;background:#fff;padding:4px 10px;border-radius:999px;font-weight:700;display:flex;align-items:center;gap:4px">Skip <svg class="ic s" style="stroke:#1e3a8a"><use href="#i-skip"/></svg></div>
+            <svg class="ic" style="width:54px;height:54px;position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);stroke:#5b86ff;opacity:.6"><use href="#i-user"/></svg>
+            <div><div style="font-size:22px;font-weight:800;line-height:1.2;color:#1e3a8a">We'll help you,<br>always</div>
+              <div class="t-sm" style="color:#3551a8;margin-top:6px">Book trusted professionals for your home services</div></div>
+          </div>
+          <div style="margin-top:auto;padding-bottom:18px">
+            <div class="center" style="margin:18px 0"><div class="row" style="gap:-6px">
+              <div class="avatar sm" style="margin-right:-8px">A</div><div class="avatar sm" style="margin-right:-8px;background:linear-gradient(135deg,#ffd6c7,#ffb59b);color:#b8502a">B</div>
+              <div class="avatar sm" style="margin-right:-8px;background:linear-gradient(135deg,#c7f0d6,#9be0b4);color:#1c7a44">C</div><div class="avatar sm" style="background:#eef1f7;color:#475569">+9</div></div>
+              <div class="muted t-xs" style="margin-top:6px">Trusted by 10L+ users</div></div>
+            <button class="btn">Get Started</button>
+            <div style="height:10px"></div>
+            <button class="btn ghost">I am a Professional</button>
+          </div>
+        </div>
+      </div>
+      <div class="cap">1 · Splash / Onboarding</div>
+      <div class="capn">Role split entry point</div>
+    </div>
+
+    <!-- C2 Login -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="sec-title" style="font-size:18px;margin-top:18px">Welcome back</div>
+          <div class="muted t-sm">Login or create your account</div>
+          <div class="label">Mobile number</div>
+          <div class="field"><svg class="ic s"><use href="#i-phone"/></svg>+91 · 98765 43210</div>
+          <button class="btn" style="margin-top:16px">Send OTP</button>
+          <div class="divider"></div>
+          <div class="muted t-xs" style="text-align:center">or continue with</div>
+          <div class="grid2" style="margin-top:10px">
+            <div class="card" style="text-align:center;font-size:11px;font-weight:600">Google</div>
+            <div class="card" style="text-align:center;font-size:11px;font-weight:600">Apple</div>
+          </div>
+          <div class="muted t-xs" style="text-align:center;margin-top:20px">By continuing you agree to Terms & Privacy</div>
+        </div>
+      </div>
+      <div class="cap">2 · Login / Register</div>
+      <div class="capn">Mobile OTP + social</div>
+    </div>
+
+    <!-- C3 OTP + Location -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="sec-title" style="font-size:18px;margin-top:18px">Verify OTP</div>
+          <div class="muted t-sm">Code sent to +91 98765 43210</div>
+          <div class="row" style="gap:8px;margin-top:16px">
+            <div class="field" style="width:46px;justify-content:center;color:var(--ink);font-weight:700;margin:0">4</div>
+            <div class="field" style="width:46px;justify-content:center;color:var(--ink);font-weight:700;margin:0">8</div>
+            <div class="field" style="width:46px;justify-content:center;color:var(--ink);font-weight:700;margin:0">2</div>
+            <div class="field" style="width:46px;justify-content:center;color:var(--light);margin:0">–</div>
+          </div>
+          <div class="muted t-xs" style="margin-top:10px">Resend in 0:24</div>
+          <button class="btn" style="margin-top:16px">Verify & Continue</button>
+          <div class="divider"></div>
+          <div class="card center">
+            <div class="catico" style="background:var(--blue-soft);color:var(--blue);width:48px;height:48px"><svg class="ic lg"><use href="#i-pin"/></svg></div>
+            <div class="h t-sm">Enable location</div>
+            <div class="muted t-xs">Find professionals near you</div>
+            <button class="btn sm" style="width:100%;margin-top:4px">Allow location access</button>
+          </div>
+        </div>
+      </div>
+      <div class="cap">3 · OTP + Location</div>
+      <div class="capn">Verify & permission</div>
+    </div>
+
+    <!-- C4 Home -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="between" style="margin-top:6px">
+            <div><div class="h">Hello, Rahul</div><div class="muted t-xs row" style="gap:3px"><svg class="ic s"><use href="#i-pin"/></svg>Anna Nagar, Chennai</div></div>
+            <svg class="ic"><use href="#i-bell"/></svg>
+          </div>
+          <div class="search" style="margin-top:12px"><svg class="ic s"><use href="#i-search"/></svg>Search for a service…</div>
+          <div class="sec-title">Categories</div>
+          <div class="grid4">
+            <div class="catbox"><div class="catico" style="background:#FEF3C7;color:#D97706"><svg class="ic"><use href="#i-bolt"/></svg></div>Electrician</div>
+            <div class="catbox"><div class="catico" style="background:#DBEAFE;color:#2563EB"><svg class="ic"><use href="#i-wrench"/></svg></div>Plumber</div>
+            <div class="catbox"><div class="catico" style="background:#D7F5F5;color:#0EA5A5"><svg class="ic"><use href="#i-snow"/></svg></div>AC Repair</div>
+            <div class="catbox"><div class="catico" style="background:#F3E8FF;color:#7C3AED"><svg class="ic"><use href="#i-roller"/></svg></div>Painter</div>
+          </div>
+          <div class="hero" style="margin-top:14px;display:flex;justify-content:space-between;align-items:center">
+            <div><div style="font-weight:800;font-size:13px">Get 20% OFF</div><div class="t-xs" style="opacity:.9">On your first booking</div>
+              <div style="background:#fff;color:var(--blue);font-weight:700;font-size:10px;padding:5px 10px;border-radius:8px;display:inline-block;margin-top:8px">Book Now</div></div>
+            <svg class="ic" style="width:40px;height:40px;opacity:.85"><use href="#i-gift"/></svg>
+          </div>
+          <div class="sec-title">Popular Professionals</div>
+          <div class="card row"><div class="avatar">RK</div>
+            <div style="flex:1"><div class="h t-sm">Ramesh Kumar</div><div class="stars t-xs"><svg class="ic s"><use href="#i-star"/></svg>4.8 · <span class="muted">Electrician</span></div></div>
+            <div class="t-xs price">₹299</div></div>
+        </div>
+        <div class="nav">
+          <div class="it on"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+          <div class="it"><svg class="ic"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="it"><svg class="ic"><use href="#i-chat"/></svg>Chat</div>
+          <div class="it"><svg class="ic"><use href="#i-offer"/></svg>Offers</div>
+          <div class="it"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+        </div>
+      </div>
+      <div class="cap">4 · Home</div>
+      <div class="capn">Search, categories, offers</div>
+    </div>
+
+    <!-- C5 Category list -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="row" style="margin-top:6px"><svg class="ic"><use href="#i-back"/></svg><div class="h" style="flex:1">Electrician</div><svg class="ic"><use href="#i-gear"/></svg></div>
+          <div class="search" style="margin-top:10px"><svg class="ic s"><use href="#i-search"/></svg>Search electrician…</div>
+          <div class="row" style="gap:8px;margin-top:10px;font-size:10px">
+            <span class="chip blue">Recommended</span><span class="chip gray">Nearest</span>
+            <span class="chip gray">Top Rated</span><span class="chip gray">Low ₹</span>
+          </div>
+          <div class="card row" style="margin-top:10px"><div class="avatar">RK</div>
+            <div style="flex:1"><div class="h t-sm">Ramesh Kumar</div><div class="stars t-xs"><svg class="ic s"><use href="#i-star"/></svg>4.8 (230) · 8+ yrs</div></div>
+            <div style="text-align:right"><div class="price t-sm">₹299</div><div class="btn sm" style="margin-top:4px">Book</div></div></div>
+          <div class="card row" style="margin-top:10px"><div class="avatar">SB</div>
+            <div style="flex:1"><div class="h t-sm">Suresh Babu</div><div class="stars t-xs"><svg class="ic s"><use href="#i-star"/></svg>4.7 (154) · 6+ yrs</div></div>
+            <div style="text-align:right"><div class="price t-sm">₹249</div><div class="btn sm" style="margin-top:4px">Book</div></div></div>
+          <div class="card row" style="margin-top:10px"><div class="avatar">KM</div>
+            <div style="flex:1"><div class="h t-sm">Karthik M</div><div class="stars t-xs"><svg class="ic s"><use href="#i-star"/></svg>4.6 (98) · 5+ yrs</div></div>
+            <div style="text-align:right"><div class="price t-sm">₹299</div><div class="btn sm" style="margin-top:4px">Book</div></div></div>
+          <div class="card row" style="margin-top:10px"><div class="avatar">VS</div>
+            <div style="flex:1"><div class="h t-sm">Vijay Solutions</div><div class="stars t-xs"><svg class="ic s"><use href="#i-star"/></svg>4.5 (76) · 10+ yrs</div></div>
+            <div style="text-align:right"><div class="price t-sm">₹399</div><div class="btn sm" style="margin-top:4px">Book</div></div></div>
+        </div>
+      </div>
+      <div class="cap">5 · Category Listing</div>
+      <div class="capn">Sort & filter by rating/cost</div>
+    </div>
+
+    <!-- C6 Professional profile -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="row" style="margin-top:6px"><svg class="ic"><use href="#i-back"/></svg><div style="flex:1"></div><svg class="ic"><use href="#i-share"/></svg></div>
+          <div class="center" style="margin-top:6px"><div class="avatar lg">RK</div>
+            <div class="h row" style="margin-top:8px;gap:5px">Ramesh Kumar <svg class="ic s" style="color:var(--blue)"><use href="#i-checkcircle"/></svg></div>
+            <div class="stars t-xs"><svg class="ic s"><use href="#i-star"/></svg>4.8 (230) · 8+ yrs exp</div></div>
+          <div class="sec-title">About</div>
+          <div class="muted t-xs" style="line-height:1.5">Expert in all types of electrical work — wiring, repairing, installation & maintenance.</div>
+          <div class="sec-title">Services</div>
+          <div class="t-xs" style="line-height:2">
+            <div class="row"><svg class="ic s" style="color:var(--green)"><use href="#i-check"/></svg>House Wiring</div>
+            <div class="row"><svg class="ic s" style="color:var(--green)"><use href="#i-check"/></svg>Light Installation</div>
+            <div class="row"><svg class="ic s" style="color:var(--green)"><use href="#i-check"/></svg>Switchboard Repair</div></div>
+          <div class="card between" style="margin-top:12px"><div><div class="muted t-xs">Service charge</div><div class="price">₹299</div></div>
+            <button class="btn sm">Book Now</button></div>
+        </div>
+      </div>
+      <div class="cap">6 · Professional Profile</div>
+      <div class="capn">Reviews, skills, price</div>
+    </div>
+
+    <!-- C7 Book service -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="row" style="margin-top:6px"><svg class="ic"><use href="#i-back"/></svg><div class="h" style="flex:1">Book Service</div></div>
+          <div class="stepbar" style="margin-top:12px"><div class="s on" style="background:var(--blue)"></div><div class="s on" style="background:var(--blue)"></div><div class="s"></div></div>
+          <div class="t-xs muted">Service · Details · Confirm</div>
+          <div class="card" style="margin-top:10px"><div class="between"><div class="muted t-xs">Service</div><span class="t-xs price">Change</span></div><div class="h t-sm">Electrical Repair</div></div>
+          <div class="label">Select date</div>
+          <div class="row" style="gap:6px;margin-top:6px">
+            <div class="catbox" style="flex:1">Tue<br><b>24</b></div><div class="catbox" style="flex:1;border-color:var(--blue);background:var(--blue-soft)">Wed<br><b>25</b></div><div class="catbox" style="flex:1">Thu<br><b>26</b></div></div>
+          <div class="label">Time slot</div>
+          <div class="grid2" style="margin-top:6px">
+            <div class="catbox">09–10 AM</div><div class="catbox" style="border-color:var(--blue);background:var(--blue-soft)">10–12 PM</div></div>
+          <div class="label">Problem description</div>
+          <div class="field">Switch not working in living room…</div>
+          <button class="btn" style="margin-top:14px">Continue</button>
+        </div>
+      </div>
+      <div class="cap">7 · Book Service</div>
+      <div class="capn">Date, slot, issue, photos</div>
+    </div>
+
+    <!-- C8 Confirmed -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="center" style="margin-top:30px">
+            <div style="width:72px;height:72px;border-radius:50%;background:var(--green-soft);color:var(--green);display:flex;align-items:center;justify-content:center"><svg class="ic" style="width:40px;height:40px"><use href="#i-checkcircle"/></svg></div>
+            <div class="h" style="font-size:18px;margin-top:6px">Booking Confirmed!</div>
+            <div class="muted t-xs">Ramesh Kumar will arrive 10:00–12:00 PM</div>
+          </div>
+          <div class="card" style="margin-top:18px">
+            <div class="between t-xs"><span class="muted">Booking ID</span><b>BK10293847</b></div>
+            <div class="divider"></div>
+            <div class="between t-xs"><span class="muted">Service</span><b>Electrical Repair</b></div>
+            <div class="between t-xs" style="margin-top:6px"><span class="muted">Date</span><b>25 May, Tomorrow</b></div>
+            <div class="between t-xs" style="margin-top:6px"><span class="muted">Time</span><b>10:00–12:00 PM</b></div>
+            <div class="between t-xs" style="margin-top:6px"><span class="muted">Address</span><b>Anna Nagar, Chennai</b></div>
+          </div>
+          <div class="row" style="gap:10px;margin-top:14px">
+            <button class="btn ghost"><svg class="ic s"><use href="#i-chat"/></svg>Chat</button>
+            <button class="btn"><svg class="ic s"><use href="#i-pin"/></svg>Track</button></div>
+        </div>
+      </div>
+      <div class="cap">8 · Booking Confirmed</div>
+      <div class="capn">Summary + track/chat</div>
+    </div>
+
+    <!-- C9 Chat -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body full" style="display:flex;flex-direction:column">
+          <div class="row" style="padding:10px 14px;border-bottom:1px solid var(--border);background:#fff">
+            <svg class="ic"><use href="#i-back"/></svg><div class="avatar sm">RK</div>
+            <div style="flex:1"><div class="h t-sm">Ramesh Kumar</div><div class="t-xs" style="color:var(--green)">● Online</div></div><svg class="ic"><use href="#i-phone"/></svg></div>
+          <div style="flex:1;padding:14px;display:flex;flex-direction:column;gap:8px">
+            <div class="bubble in">Hi, I have booked an electrical repair.</div>
+            <div class="bubble out">Hello Rahul, I have received your booking.</div>
+            <div class="bubble out">I'll reach by 10:00 AM.</div>
+            <div class="bubble in">Okay, thank you</div>
+          </div>
+          <div class="row" style="padding:10px 12px;border-top:1px solid var(--border);background:#fff">
+            <div class="field" style="flex:1;margin:0">Type a message…</div>
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center"><svg class="ic s"><use href="#i-send"/></svg></div></div>
+        </div>
+      </div>
+      <div class="cap">9 · Chat</div>
+      <div class="capn">Available after confirm</div>
+    </div>
+
+    <!-- C10 My bookings -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="h" style="margin-top:6px">My Bookings</div>
+          <div class="row" style="gap:8px;margin-top:10px;font-size:11px">
+            <span class="chip blue">Upcoming</span><span class="muted">Completed</span><span class="muted">Cancelled</span></div>
+          <div class="card row" style="margin-top:10px"><div class="avatar">RK</div>
+            <div style="flex:1"><div class="h t-sm">Electrical Repair</div><div class="muted t-xs">Ramesh Kumar</div>
+              <div class="t-xs">25 May · 10–12 PM</div><span class="chip green" style="margin-top:4px"><svg class="ic s"><use href="#i-check"/></svg>Confirmed</span></div></div>
+          <div class="card row" style="margin-top:10px"><div class="avatar">CT</div>
+            <div style="flex:1"><div class="h t-sm">AC Service</div><div class="muted t-xs">Cool Tech</div>
+              <div class="t-xs">28 May · 02–04 PM</div><span class="chip amber" style="margin-top:4px"><svg class="ic s"><use href="#i-clock"/></svg>Pending</span></div></div>
+          <div class="card row" style="margin-top:10px"><div class="avatar">SB</div>
+            <div style="flex:1"><div class="h t-sm">Plumbing Fix</div><div class="muted t-xs">Suresh Babu</div>
+              <div class="t-xs">20 May · 11–12 PM</div><span class="chip gray" style="margin-top:4px">Completed</span></div></div>
+        </div>
+        <div class="nav">
+          <div class="it"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+          <div class="it on"><svg class="ic"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="it"><svg class="ic"><use href="#i-chat"/></svg>Chat</div>
+          <div class="it"><svg class="ic"><use href="#i-offer"/></svg>Offers</div>
+          <div class="it"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+        </div>
+      </div>
+      <div class="cap">10 · My Bookings</div>
+      <div class="capn">Upcoming/Completed/Cancelled</div>
+    </div>
+
+    <!-- C11 Wallet -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="h" style="margin-top:6px">Wallet</div>
+          <div class="hero" style="margin-top:12px">
+            <div class="t-xs" style="opacity:.9">Available Balance</div>
+            <div style="font-size:26px;font-weight:800">₹2,450.00</div>
+            <div style="background:#fff;color:var(--blue);font-weight:700;font-size:11px;padding:7px 12px;border-radius:9px;display:inline-flex;align-items:center;gap:5px;margin-top:10px"><svg class="ic s"><use href="#i-plus"/></svg>Add Money</div>
+          </div>
+          <div class="between" style="margin-top:14px"><div class="sec-title" style="margin:0">Transactions</div><span class="t-xs price">View All</span></div>
+          <div class="card between" style="margin-top:8px"><div class="row"><span class="catico" style="width:30px;height:30px;background:#FEE2E2;color:#B91C1C;margin:0"><svg class="ic s"><use href="#i-receipt"/></svg></span><div><div class="h t-xs">Electrical Repair</div><div class="muted t-xs">25 May</div></div></div><b class="t-sm" style="color:var(--red)">– ₹299</b></div>
+          <div class="card between" style="margin-top:8px"><div class="row"><span class="catico" style="width:30px;height:30px;background:var(--green-soft);color:#15803D;margin:0"><svg class="ic s"><use href="#i-plus"/></svg></span><div><div class="h t-xs">Wallet Top-up</div><div class="muted t-xs">20 May</div></div></div><b class="t-sm" style="color:var(--green)">+ ₹500</b></div>
+          <div class="card between" style="margin-top:8px"><div class="row"><span class="catico" style="width:30px;height:30px;background:#FEE2E2;color:#B91C1C;margin:0"><svg class="ic s"><use href="#i-receipt"/></svg></span><div><div class="h t-xs">AC Service</div><div class="muted t-xs">18 May</div></div></div><b class="t-sm" style="color:var(--red)">– ₹499</b></div>
+        </div>
+        <div class="nav">
+          <div class="it"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+          <div class="it"><svg class="ic"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="it"><svg class="ic"><use href="#i-chat"/></svg>Chat</div>
+          <div class="it on"><svg class="ic"><use href="#i-wallet"/></svg>Wallet</div>
+          <div class="it"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+        </div>
+      </div>
+      <div class="cap">11 · Wallet</div>
+      <div class="capn">Balance + transactions</div>
+    </div>
+
+    <!-- C12 Profile -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="h row" style="margin-top:6px;gap:6px"><svg class="ic"><use href="#i-gear"/></svg>Profile</div>
+          <div class="card row" style="margin-top:12px"><div class="avatar">R</div>
+            <div style="flex:1"><div class="h t-sm">Rahul Kumar</div><div class="muted t-xs">+91 98765 43210</div></div><span class="t-xs price">Edit</span></div>
+          <div class="card" style="margin-top:12px;padding:0">
+            <div class="menurow"><span class="ico-wrap"><svg class="ic s"><use href="#i-pin"/></svg></span><span style="flex:1">My Addresses</span><svg class="ic s muted"><use href="#i-right"/></svg></div>
+            <div class="menurow"><span class="ico-wrap"><svg class="ic s"><use href="#i-card"/></svg></span><span style="flex:1">Payment Methods</span><svg class="ic s muted"><use href="#i-right"/></svg></div>
+            <div class="menurow"><span class="ico-wrap"><svg class="ic s"><use href="#i-gift"/></svg></span><span style="flex:1">Refer & Earn</span><span class="chip green">₹100</span></div>
+            <div class="menurow"><span class="ico-wrap"><svg class="ic s"><use href="#i-help"/></svg></span><span style="flex:1">Help & Support</span><svg class="ic s muted"><use href="#i-right"/></svg></div>
+            <div class="menurow" style="border-bottom:none"><span class="ico-wrap"><svg class="ic s"><use href="#i-gear"/></svg></span><span style="flex:1">Settings</span><svg class="ic s muted"><use href="#i-right"/></svg></div>
+          </div>
+          <button class="btn ghost" style="margin-top:14px;color:var(--red);border-color:var(--red)"><svg class="ic s"><use href="#i-logout"/></svg>Log out</button>
+        </div>
+        <div class="nav">
+          <div class="it"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+          <div class="it"><svg class="ic"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="it"><svg class="ic"><use href="#i-chat"/></svg>Chat</div>
+          <div class="it"><svg class="ic"><use href="#i-offer"/></svg>Offers</div>
+          <div class="it on"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+        </div>
+      </div>
+      <div class="cap">12 · Profile</div>
+      <div class="capn">Account, addresses, settings</div>
+    </div>
+
+  </div>
+
+  <!-- ============ PROFESSIONAL ============ -->
+  <div class="flow">
+    <h2><span class="pill pro">Professional</span> Multi-service Onboarding → Verification → Dashboard</h2>
+    <p>Login → Select services (multi) → Create profile → Experience → Upload documents → Verification → Dashboard (Home/Jobs/Bookings/Wallet/Profile)</p>
+  </div>
+  <div class="rail">
+
+    <!-- P1 Pro login -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="hero" style="margin-top:14px;background:linear-gradient(135deg,#0EA5A5,#14C2C2)">
+            <div class="row" style="gap:8px"><svg class="ic lg"><use href="#i-rocket"/></svg><div style="font-size:18px;font-weight:800">Grow your business</div></div>
+            <div class="t-sm" style="opacity:.9;margin-top:6px">Get jobs from customers near you</div></div>
+          <div class="label">Mobile number</div>
+          <div class="field"><svg class="ic s"><use href="#i-phone"/></svg>+91 · 90000 12345</div>
+          <button class="btn teal" style="margin-top:16px">Send OTP</button>
+          <div class="divider"></div>
+          <div class="muted t-xs" style="text-align:center">New here? Account is created automatically.<br>Switch to customer app anytime.</div>
+        </div>
+      </div>
+      <div class="cap">P1 · Professional Login</div>
+      <div class="capn">Separate pro entry</div>
+    </div>
+
+    <!-- P2 Select services multi -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="stepbar" style="margin-top:10px"><div class="s on"></div><div class="s"></div><div class="s"></div><div class="s"></div></div>
+          <div class="h" style="margin-top:4px">What services do you offer?</div>
+          <div class="muted t-xs">Select all that apply</div>
+          <div class="selcard on" style="margin-top:12px"><span class="catico" style="margin:0;width:32px;height:32px;background:#FEF3C7;color:#D97706"><svg class="ic s"><use href="#i-bolt"/></svg></span><div style="flex:1" class="t-sm h">Electrician</div><div class="check on"><svg class="ic s"><use href="#i-check"/></svg></div></div>
+          <div class="selcard on" style="margin-top:8px"><span class="catico" style="margin:0;width:32px;height:32px;background:#DBEAFE;color:#2563EB"><svg class="ic s"><use href="#i-wrench"/></svg></span><div style="flex:1" class="t-sm h">Plumber</div><div class="check on"><svg class="ic s"><use href="#i-check"/></svg></div></div>
+          <div class="selcard" style="margin-top:8px"><span class="catico" style="margin:0;width:32px;height:32px;background:#F3E8FF;color:#7C3AED"><svg class="ic s"><use href="#i-roller"/></svg></span><div style="flex:1" class="t-sm h">Painter</div><div class="check"></div></div>
+          <div class="selcard on" style="margin-top:8px"><span class="catico" style="margin:0;width:32px;height:32px;background:#D7F5F5;color:#0EA5A5"><svg class="ic s"><use href="#i-snow"/></svg></span><div style="flex:1" class="t-sm h">AC Mechanic</div><div class="check on"><svg class="ic s"><use href="#i-check"/></svg></div></div>
+          <div class="selcard" style="margin-top:8px"><span class="catico" style="margin:0;width:32px;height:32px;background:#FEF3C7;color:#B45309"><svg class="ic s"><use href="#i-saw"/></svg></span><div style="flex:1" class="t-sm h">Carpenter</div><div class="check"></div></div>
+          <div class="selcard" style="margin-top:8px"><span class="catico" style="margin:0;width:32px;height:32px;background:#DCFCE7;color:#15803D"><svg class="ic s"><use href="#i-broom"/></svg></span><div style="flex:1" class="t-sm h">Cleaner</div><div class="check"></div></div>
+          <button class="btn teal" style="margin-top:14px">Continue (3 selected)</button>
+        </div>
+      </div>
+      <div class="cap">P2 · Select Services</div>
+      <div class="capn">Multi-selection</div>
+    </div>
+
+    <!-- P3 Create profile -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="stepbar" style="margin-top:10px"><div class="s on"></div><div class="s on"></div><div class="s"></div><div class="s"></div></div>
+          <div class="h" style="margin-top:4px">Create your profile</div>
+          <div class="center" style="margin-top:10px"><div class="avatar lg" style="background:var(--teal-soft);color:var(--teal)"><svg class="ic lg"><use href="#i-camera"/></svg></div><div class="t-xs" style="color:var(--teal);margin-top:6px;font-weight:700">Add photo</div></div>
+          <div class="label">Full name</div><div class="field"><svg class="ic s"><use href="#i-user"/></svg>Ramesh Kumar</div>
+          <div class="label">Phone</div><div class="field"><svg class="ic s"><use href="#i-phone"/></svg>+91 90000 12345</div>
+          <div class="label">City / Area</div><div class="field"><svg class="ic s"><use href="#i-pin"/></svg>Anna Nagar, Chennai</div>
+          <div class="label">Service radius</div><div class="field"><svg class="ic s"><use href="#i-pin"/></svg>Within 8 km</div>
+          <button class="btn teal" style="margin-top:14px">Continue</button>
+        </div>
+      </div>
+      <div class="cap">P3 · Create Profile</div>
+      <div class="capn">Name, photo, area, radius</div>
+    </div>
+
+    <!-- P4 Experience -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="stepbar" style="margin-top:10px"><div class="s on"></div><div class="s on"></div><div class="s on"></div><div class="s"></div></div>
+          <div class="h" style="margin-top:4px">Experience & pricing</div>
+          <div class="label">Years of experience</div><div class="field"><svg class="ic s"><use href="#i-toolbox"/></svg>8 years</div>
+          <div class="label">Specializations</div>
+          <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">
+            <span class="chip blue">House Wiring</span><span class="chip blue">Switchboard</span><span class="chip blue">Fan Install</span><span class="chip gray"><svg class="ic s"><use href="#i-plus"/></svg>Add</span></div>
+          <div class="label">Visit / starting charge</div><div class="field">₹299</div>
+          <div class="label">Available days</div>
+          <div class="row" style="gap:5px;margin-top:6px;font-size:9px">
+            <div class="catbox" style="border-color:var(--teal);background:var(--teal-soft)">M</div><div class="catbox" style="border-color:var(--teal);background:var(--teal-soft)">T</div><div class="catbox" style="border-color:var(--teal);background:var(--teal-soft)">W</div><div class="catbox" style="border-color:var(--teal);background:var(--teal-soft)">T</div><div class="catbox" style="border-color:var(--teal);background:var(--teal-soft)">F</div><div class="catbox">S</div><div class="catbox">S</div></div>
+          <div class="label">Languages</div><div class="field"><svg class="ic s"><use href="#i-lang"/></svg>Tamil, English, Hindi</div>
+          <button class="btn teal" style="margin-top:14px">Continue</button>
+        </div>
+      </div>
+      <div class="cap">P4 · Experience</div>
+      <div class="capn">Skills, price, availability</div>
+    </div>
+
+    <!-- P5 Upload docs -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="stepbar" style="margin-top:10px"><div class="s on"></div><div class="s on"></div><div class="s on"></div><div class="s on"></div></div>
+          <div class="h" style="margin-top:4px">Upload documents</div>
+          <div class="muted t-xs">For verification & payouts</div>
+          <div class="label">Government ID *</div>
+          <div class="card between" style="margin-top:6px"><div class="row"><span class="catico" style="margin:0;width:30px;height:30px;background:var(--blue-soft);color:var(--blue)"><svg class="ic s"><use href="#i-doc"/></svg></span><div class="t-xs"><div class="h">Aadhaar.pdf</div><div class="muted">Uploaded</div></div></div><span class="chip green"><svg class="ic s"><use href="#i-check"/></svg></span></div>
+          <div class="label">Address proof *</div>
+          <div class="up" style="margin-top:6px"><svg class="ic s"><use href="#i-upload"/></svg>Tap to upload</div>
+          <div class="label">Work certificate (optional)</div>
+          <div class="up" style="margin-top:6px"><svg class="ic s"><use href="#i-upload"/></svg>Tap to upload</div>
+          <div class="label">Bank / UPI details *</div><div class="field"><svg class="ic s"><use href="#i-bank"/></svg>UPI · ramesh@okhdfc</div>
+          <button class="btn teal" style="margin-top:14px"><svg class="ic s"><use href="#i-shield"/></svg>Submit for Verification</button>
+        </div>
+      </div>
+      <div class="cap">P5 · Upload Documents</div>
+      <div class="capn">ID, proof, bank/UPI</div>
+    </div>
+
+    <!-- P6 Verification -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="center" style="margin-top:50px">
+            <div style="width:84px;height:84px;border-radius:50%;background:var(--amber-soft);color:var(--amber);display:flex;align-items:center;justify-content:center"><svg class="ic" style="width:42px;height:42px"><use href="#i-clock"/></svg></div>
+            <div class="h" style="font-size:18px;margin-top:10px">Under Review</div>
+            <div class="muted t-sm" style="max-width:220px">Your profile is being verified. This usually takes 24–48 hours.</div>
+            <span class="chip amber" style="margin-top:6px">Status: Pending</span>
+          </div>
+          <div class="card" style="margin-top:24px">
+            <div class="between t-xs"><span class="row"><svg class="ic s" style="color:var(--green)"><use href="#i-check"/></svg>Services selected</span><b>3</b></div><div class="divider"></div>
+            <div class="between t-xs"><span class="row"><svg class="ic s" style="color:var(--green)"><use href="#i-check"/></svg>Profile completed</span><b>Done</b></div>
+            <div class="between t-xs" style="margin-top:8px"><span class="row"><svg class="ic s" style="color:var(--amber)"><use href="#i-clock"/></svg>Documents</span><b>Reviewing</b></div>
+          </div>
+          <button class="btn ghost teal" style="margin-top:14px"><svg class="ic s"><use href="#i-edit"/></svg>Edit submitted details</button>
+        </div>
+      </div>
+      <div class="cap">P6 · Verification Pending</div>
+      <div class="capn">Editable while reviewing</div>
+    </div>
+
+    <!-- P7 Dashboard -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="between" style="margin-top:6px">
+            <div><div class="h">Hi, Ramesh</div><div class="muted t-xs">Electrician · Plumber</div></div>
+            <div class="row" style="gap:6px"><span class="t-xs h" style="color:var(--green)">Online</span><div class="toggle"></div></div></div>
+          <div class="hero" style="margin-top:12px;background:linear-gradient(135deg,#0EA5A5,#14C2C2)">
+            <div class="t-xs" style="opacity:.9">Total Earnings</div>
+            <div style="font-size:26px;font-weight:800">₹48,250</div>
+            <div class="t-xs" style="opacity:.9;margin-top:2px">▲ ₹1,200 today</div></div>
+          <div class="grid2" style="margin-top:12px">
+            <div class="stat"><div class="n">3</div><div class="l">New requests</div></div>
+            <div class="stat"><div class="n">2</div><div class="l">Today's jobs</div></div>
+            <div class="stat"><div class="n">128</div><div class="l">Completed</div></div>
+            <div class="stat"><div class="n">4.8</div><div class="l">Rating</div></div></div>
+          <div class="sec-title">New Job Request</div>
+          <div class="card"><div class="between"><div class="h t-sm">Electrical Repair</div><span class="chip amber">New</span></div>
+            <div class="muted t-xs row" style="margin-top:4px;gap:4px"><svg class="ic s"><use href="#i-pin"/></svg>1.2 km · Today 2–4 PM · ₹299</div>
+            <div class="row" style="gap:8px;margin-top:8px"><button class="btn ghost sm" style="flex:1;color:var(--red);border-color:var(--red)">Reject</button><button class="btn teal sm" style="flex:1">Accept</button></div></div>
+        </div>
+        <div class="nav">
+          <div class="it teal on"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+          <div class="it"><svg class="ic"><use href="#i-toolbox"/></svg>Jobs</div>
+          <div class="it"><svg class="ic"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="it"><svg class="ic"><use href="#i-wallet"/></svg>Wallet</div>
+          <div class="it"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+        </div>
+      </div>
+      <div class="cap">P7 · Dashboard (Home)</div>
+      <div class="capn">Earnings + requests + online toggle</div>
+    </div>
+
+    <!-- P8 Jobs -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="h" style="margin-top:6px">Jobs</div>
+          <div class="row" style="gap:8px;margin-top:10px;font-size:11px">
+            <span class="chip" style="background:var(--teal-soft);color:var(--teal)">Requests</span><span class="muted">Active</span><span class="muted">Completed</span></div>
+          <div class="card"><div class="row"><div class="avatar sm">R</div><div style="flex:1"><div class="h t-xs">Rahul · Electrical Repair</div><div class="muted t-xs row" style="gap:3px"><svg class="ic s"><use href="#i-pin"/></svg>1.2 km · Today 2–4 PM</div></div><div class="price t-sm">₹299</div></div>
+            <div class="row" style="gap:8px;margin-top:8px"><button class="btn ghost sm" style="flex:1;color:var(--red);border-color:var(--red)">Reject</button><button class="btn teal sm" style="flex:1">Accept</button></div></div>
+          <div class="card" style="margin-top:10px"><div class="row"><div class="avatar sm">A</div><div style="flex:1"><div class="h t-xs">Anita · Fan Install</div><div class="muted t-xs row" style="gap:3px"><svg class="ic s"><use href="#i-pin"/></svg>3.4 km · Tomorrow 11 AM</div></div><div class="price t-sm">₹349</div></div>
+            <div class="row" style="gap:8px;margin-top:8px"><button class="btn ghost teal sm" style="flex:1">Suggest time</button><button class="btn teal sm" style="flex:1">Accept</button></div></div>
+        </div>
+        <div class="nav">
+          <div class="it"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+          <div class="it teal on"><svg class="ic"><use href="#i-toolbox"/></svg>Jobs</div>
+          <div class="it"><svg class="ic"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="it"><svg class="ic"><use href="#i-wallet"/></svg>Wallet</div>
+          <div class="it"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+        </div>
+      </div>
+      <div class="cap">P8 · Jobs</div>
+      <div class="capn">Accept / Reject / Suggest time</div>
+    </div>
+
+    <!-- P9 Active job / bookings -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="row" style="margin-top:6px"><svg class="ic"><use href="#i-back"/></svg><div class="h" style="flex:1">Active Job</div></div>
+          <div class="card row" style="margin-top:10px"><div class="avatar">R</div><div style="flex:1"><div class="h t-sm">Rahul Kumar</div><div class="muted t-xs">Electrical Repair · ₹299</div></div><svg class="ic"><use href="#i-phone"/></svg></div>
+          <div class="card" style="margin-top:10px"><div class="h t-xs">Status</div>
+            <div style="margin-top:8px;font-size:11px;line-height:2.1">
+              <div class="row"><svg class="ic s" style="color:var(--green)"><use href="#i-checkcircle"/></svg>Accepted</div>
+              <div class="row"><svg class="ic s" style="color:var(--green)"><use href="#i-checkcircle"/></svg>On the way</div>
+              <div class="row muted"><svg class="ic s"><use href="#i-clock"/></svg>Work started</div>
+              <div class="row muted"><svg class="ic s"><use href="#i-clock"/></svg>Completed</div></div></div>
+          <div class="up" style="margin-top:10px"><svg class="ic s"><use href="#i-camera"/></svg>Upload work photos</div>
+          <button class="btn teal" style="margin-top:12px">Mark: Work Started</button>
+          <button class="btn ghost teal" style="margin-top:8px"><svg class="ic s"><use href="#i-chat"/></svg>Chat with customer</button>
+        </div>
+        <div class="nav">
+          <div class="it"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+          <div class="it"><svg class="ic"><use href="#i-toolbox"/></svg>Jobs</div>
+          <div class="it teal on"><svg class="ic"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="it"><svg class="ic"><use href="#i-wallet"/></svg>Wallet</div>
+          <div class="it"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+        </div>
+      </div>
+      <div class="cap">P9 · Active Job / Bookings</div>
+      <div class="capn">Status updates + photos</div>
+    </div>
+
+    <!-- P10 Pro wallet -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="h" style="margin-top:6px">Earnings & Wallet</div>
+          <div class="hero" style="margin-top:12px;background:linear-gradient(135deg,#0EA5A5,#14C2C2)">
+            <div class="t-xs" style="opacity:.9">Available for payout</div>
+            <div style="font-size:26px;font-weight:800">₹6,840</div>
+            <div style="background:#fff;color:var(--teal);font-weight:700;font-size:11px;padding:7px 12px;border-radius:9px;display:inline-flex;align-items:center;gap:5px;margin-top:10px"><svg class="ic s"><use href="#i-bank"/></svg>Withdraw</div></div>
+          <div class="grid2" style="margin-top:12px">
+            <div class="stat"><div class="n">₹48,250</div><div class="l">Total earned</div></div>
+            <div class="stat"><div class="n">₹1,410</div><div class="l">Pending</div></div></div>
+          <div class="sec-title">Recent payouts</div>
+          <div class="card between"><div class="row"><span class="catico" style="margin:0;width:30px;height:30px;background:var(--green-soft);color:#15803D"><svg class="ic s"><use href="#i-check"/></svg></span><div><div class="h t-xs">Electrical Repair</div><div class="muted t-xs">25 May</div></div></div><b class="t-sm" style="color:var(--green)">+ ₹299</b></div>
+          <div class="card between" style="margin-top:8px"><div class="row"><span class="catico" style="margin:0;width:30px;height:30px;background:var(--green-soft);color:#15803D"><svg class="ic s"><use href="#i-check"/></svg></span><div><div class="h t-xs">Fan Install</div><div class="muted t-xs">24 May</div></div></div><b class="t-sm" style="color:var(--green)">+ ₹349</b></div>
+        </div>
+        <div class="nav">
+          <div class="it"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+          <div class="it"><svg class="ic"><use href="#i-toolbox"/></svg>Jobs</div>
+          <div class="it"><svg class="ic"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="it teal on"><svg class="ic"><use href="#i-wallet"/></svg>Wallet</div>
+          <div class="it"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+        </div>
+      </div>
+      <div class="cap">P10 · Earnings / Wallet</div>
+      <div class="capn">Payouts & withdrawals</div>
+    </div>
+
+    <!-- P11 Pro profile -->
+    <div class="screen">
+      <div class="phone"><div class="status"><span>9:41</span><span class="sig"></span></div>
+        <div class="body">
+          <div class="h" style="margin-top:6px">Profile</div>
+          <div class="card center" style="margin-top:12px"><div class="avatar lg">RK</div>
+            <div class="h row" style="margin-top:8px;gap:5px">Ramesh Kumar <svg class="ic s" style="color:var(--teal)"><use href="#i-checkcircle"/></svg></div><div class="stars t-xs"><svg class="ic s"><use href="#i-star"/></svg>4.8 (230)</div>
+            <span class="chip green" style="margin-top:6px"><svg class="ic s"><use href="#i-shield"/></svg>Verified Pro</span></div>
+          <div class="card" style="margin-top:12px;padding:0">
+            <div class="menurow"><span class="ico-wrap" style="background:var(--teal-soft);color:var(--teal)"><svg class="ic s"><use href="#i-toolbox"/></svg></span><span style="flex:1">My Services & Pricing</span><svg class="ic s muted"><use href="#i-right"/></svg></div>
+            <div class="menurow"><span class="ico-wrap" style="background:var(--teal-soft);color:var(--teal)"><svg class="ic s"><use href="#i-booking"/></svg></span><span style="flex:1">Availability</span><svg class="ic s muted"><use href="#i-right"/></svg></div>
+            <div class="menurow"><span class="ico-wrap" style="background:var(--teal-soft);color:var(--teal)"><svg class="ic s"><use href="#i-doc"/></svg></span><span style="flex:1">Documents</span><span class="chip green">Verified</span></div>
+            <div class="menurow"><span class="ico-wrap" style="background:var(--teal-soft);color:var(--teal)"><svg class="ic s"><use href="#i-star"/></svg></span><span style="flex:1">Reviews</span><svg class="ic s muted"><use href="#i-right"/></svg></div>
+            <div class="menurow" style="border-bottom:none"><span class="ico-wrap" style="background:var(--teal-soft);color:var(--teal)"><svg class="ic s"><use href="#i-bank"/></svg></span><span style="flex:1">Bank / Payout</span><svg class="ic s muted"><use href="#i-right"/></svg></div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="it"><svg class="ic"><use href="#i-home"/></svg>Home</div>
+          <div class="it"><svg class="ic"><use href="#i-toolbox"/></svg>Jobs</div>
+          <div class="it"><svg class="ic"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="it"><svg class="ic"><use href="#i-wallet"/></svg>Wallet</div>
+          <div class="it teal on"><svg class="ic"><use href="#i-user"/></svg>Profile</div>
+        </div>
+      </div>
+      <div class="cap">P11 · Professional Profile</div>
+      <div class="capn">Services, availability, payout</div>
+    </div>
+
+  </div>
+
+  <!-- ============ ADMIN ============ -->
+  <div class="flow">
+    <h2><span class="pill admin">Web Admin</span> Verification · Bookings · Payouts · Analytics</h2>
+    <p>Browser-based control panel for managing professionals, customers, verification, bookings, payments and disputes.</p>
+  </div>
+  <div class="rail">
+
+    <!-- A1 Dashboard -->
+    <div class="screen">
+      <div class="desktop">
+        <div class="dt-side">
+          <div class="logo"><svg class="ic s"><use href="#i-toolbox"/></svg>WorkNear</div>
+          <div class="mi on"><svg class="ic s"><use href="#i-dash"/></svg>Dashboard</div>
+          <div class="mi"><svg class="ic s"><use href="#i-users"/></svg>Customers</div>
+          <div class="mi"><svg class="ic s"><use href="#i-toolbox"/></svg>Professionals</div>
+          <div class="mi"><svg class="ic s"><use href="#i-shield"/></svg>Verification</div>
+          <div class="mi"><svg class="ic s"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="mi"><svg class="ic s"><use href="#i-wallet"/></svg>Payouts</div>
+          <div class="mi"><svg class="ic s"><use href="#i-star"/></svg>Reviews</div>
+          <div class="mi"><svg class="ic s"><use href="#i-chart"/></svg>Reports</div>
+        </div>
+        <div class="dt-main">
+          <div class="dt-top"><span>Dashboard Overview</span><span class="row" style="gap:8px"><span class="muted t-xs">Admin</span><div class="avatar sm">A</div></span></div>
+          <div class="dt-content">
+            <div class="dt-grid">
+              <div class="stat"><div class="n">₹4.2L</div><div class="l">Revenue (mo)</div></div>
+              <div class="stat"><div class="n">1,284</div><div class="l">Bookings</div></div>
+              <div class="stat"><div class="n">342</div><div class="l">Active Pros</div></div>
+              <div class="stat"><div class="n">12</div><div class="l">Pending verify</div></div>
+            </div>
+            <div class="card"><div class="h t-sm" style="margin-bottom:6px">Bookings this week</div>
+              <div class="row" style="gap:6px;align-items:flex-end;height:90px">
+                <div style="flex:1;height:40%;background:var(--blue-soft);border-radius:4px"></div>
+                <div style="flex:1;height:65%;background:var(--blue-soft);border-radius:4px"></div>
+                <div style="flex:1;height:50%;background:var(--blue-soft);border-radius:4px"></div>
+                <div style="flex:1;height:80%;background:var(--blue);border-radius:4px"></div>
+                <div style="flex:1;height:60%;background:var(--blue-soft);border-radius:4px"></div>
+                <div style="flex:1;height:90%;background:var(--blue);border-radius:4px"></div>
+                <div style="flex:1;height:55%;background:var(--blue-soft);border-radius:4px"></div>
+              </div></div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">A1 · Admin Dashboard</div>
+      <div class="capn">KPIs + trends</div>
+    </div>
+
+    <!-- A2 Verification -->
+    <div class="screen">
+      <div class="desktop">
+        <div class="dt-side">
+          <div class="logo"><svg class="ic s"><use href="#i-toolbox"/></svg>WorkNear</div>
+          <div class="mi"><svg class="ic s"><use href="#i-dash"/></svg>Dashboard</div>
+          <div class="mi"><svg class="ic s"><use href="#i-users"/></svg>Customers</div>
+          <div class="mi"><svg class="ic s"><use href="#i-toolbox"/></svg>Professionals</div>
+          <div class="mi on"><svg class="ic s"><use href="#i-shield"/></svg>Verification</div>
+          <div class="mi"><svg class="ic s"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="mi"><svg class="ic s"><use href="#i-wallet"/></svg>Payouts</div>
+          <div class="mi"><svg class="ic s"><use href="#i-star"/></svg>Reviews</div>
+          <div class="mi"><svg class="ic s"><use href="#i-chart"/></svg>Reports</div>
+        </div>
+        <div class="dt-main">
+          <div class="dt-top"><span>Professional Verification</span><span class="chip amber">12 pending</span></div>
+          <div class="dt-content">
+            <div class="card" style="padding:0">
+              <table>
+                <tr><th>Name</th><th>Services</th><th>Docs</th><th>Status</th><th>Action</th></tr>
+                <tr><td>Ramesh Kumar</td><td>Electrician +2</td><td>3/3</td><td><span class="chip amber">Pending</span></td>
+                  <td><span class="chip green" style="margin-right:4px">Approve</span><span class="chip red">Reject</span></td></tr>
+                <tr><td>Suresh Babu</td><td>Plumber</td><td>2/3</td><td><span class="chip amber">Pending</span></td>
+                  <td><span class="chip green" style="margin-right:4px">Approve</span><span class="chip red">Reject</span></td></tr>
+                <tr><td>Karthik M</td><td>Painter</td><td>1/3</td><td><span class="chip blue">More info</span></td>
+                  <td><span class="chip green" style="margin-right:4px">Approve</span><span class="chip red">Reject</span></td></tr>
+                <tr><td>Cool Tech</td><td>AC Mechanic</td><td>3/3</td><td><span class="chip green">Approved</span></td><td class="muted">—</td></tr>
+              </table>
+            </div>
+            <div class="muted t-xs" style="margin-top:8px">Click a row to review documents, services & bank details before approving.</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">A2 · Verification Queue</div>
+      <div class="capn">Approve / Reject / More info</div>
+    </div>
+
+    <!-- A3 Bookings -->
+    <div class="screen">
+      <div class="desktop">
+        <div class="dt-side">
+          <div class="logo"><svg class="ic s"><use href="#i-toolbox"/></svg>WorkNear</div>
+          <div class="mi"><svg class="ic s"><use href="#i-dash"/></svg>Dashboard</div>
+          <div class="mi"><svg class="ic s"><use href="#i-users"/></svg>Customers</div>
+          <div class="mi"><svg class="ic s"><use href="#i-toolbox"/></svg>Professionals</div>
+          <div class="mi"><svg class="ic s"><use href="#i-shield"/></svg>Verification</div>
+          <div class="mi on"><svg class="ic s"><use href="#i-booking"/></svg>Bookings</div>
+          <div class="mi"><svg class="ic s"><use href="#i-wallet"/></svg>Payouts</div>
+          <div class="mi"><svg class="ic s"><use href="#i-star"/></svg>Reviews</div>
+          <div class="mi"><svg class="ic s"><use href="#i-chart"/></svg>Reports</div>
+        </div>
+        <div class="dt-main">
+          <div class="dt-top"><span>Bookings Management</span><span class="search" style="font-size:10px;padding:5px 9px"><svg class="ic s"><use href="#i-search"/></svg>Search booking ID…</span></div>
+          <div class="dt-content">
+            <div class="card" style="padding:0">
+              <table>
+                <tr><th>Booking</th><th>Customer</th><th>Professional</th><th>Amount</th><th>Status</th></tr>
+                <tr><td>BK10293847</td><td>Rahul K</td><td>Ramesh Kumar</td><td>₹299</td><td><span class="chip green">Confirmed</span></td></tr>
+                <tr><td>BK10293848</td><td>Anita S</td><td>Cool Tech</td><td>₹499</td><td><span class="chip amber">In progress</span></td></tr>
+                <tr><td>BK10293849</td><td>Vikram R</td><td>Suresh Babu</td><td>₹249</td><td><span class="chip gray">Completed</span></td></tr>
+                <tr><td>BK10293850</td><td>Meera P</td><td>Karthik M</td><td>₹399</td><td><span class="chip red">Cancelled</span></td></tr>
+                <tr><td>BK10293851</td><td>Arun V</td><td>Ramesh Kumar</td><td>₹349</td><td><span class="chip green">Confirmed</span></td></tr>
+              </table>
+            </div>
+            <div class="muted t-xs" style="margin-top:8px">Filter by status, date, city or service. Handle disputes & refunds from row detail.</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">A3 · Bookings & Disputes</div>
+      <div class="capn">Monitor, refund, resolve</div>
+    </div>
+
+  </div>
+
+  <p class="sub" style="margin-top:40px">To open in Figma: install the free <b>html.to.design</b> plugin → Import → paste this file / URL. Each frame above maps to a Figma frame. Icons are inline SVG, so they import as clean vector shapes.</p>
+</div>
+</body>
+</html>

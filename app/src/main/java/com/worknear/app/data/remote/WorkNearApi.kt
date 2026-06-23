@@ -1,0 +1,96 @@
+package com.worknear.app.data.remote
+
+import com.worknear.app.data.remote.dto.AddressDto
+import com.worknear.app.data.remote.dto.ApiEnvelope
+import com.worknear.app.data.remote.dto.AuthData
+import com.worknear.app.data.remote.dto.BookingDto
+import com.worknear.app.data.remote.dto.CategoryDto
+import com.worknear.app.data.remote.dto.CreateBookingBody
+import com.worknear.app.data.remote.dto.OfferDto
+import com.worknear.app.data.remote.dto.OtpRequestBody
+import com.worknear.app.data.remote.dto.OtpRequestData
+import com.worknear.app.data.remote.dto.OtpVerifyBody
+import com.worknear.app.data.remote.dto.PageDto
+import com.worknear.app.data.remote.dto.ProfessionalDetailDto
+import com.worknear.app.data.remote.dto.ProfessionalSummaryDto
+import com.worknear.app.data.remote.dto.RefreshBody
+import com.worknear.app.data.remote.dto.UpdateProfileBody
+import com.worknear.app.data.remote.dto.UserDto
+import com.worknear.app.data.remote.dto.WalletDto
+import com.worknear.app.data.remote.dto.WalletTransactionDto
+import retrofit2.Response
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.PATCH
+import retrofit2.http.POST
+import retrofit2.http.Path
+import retrofit2.http.Query
+
+interface WorkNearApi {
+
+    // ----- Auth (public) -----
+    @POST("api/v1/auth/otp/request")
+    suspend fun requestOtp(@Body body: OtpRequestBody): Response<ApiEnvelope<OtpRequestData>>
+
+    @POST("api/v1/auth/otp/verify")
+    suspend fun verifyOtp(@Body body: OtpVerifyBody): Response<ApiEnvelope<AuthData>>
+
+    @POST("api/v1/auth/refresh")
+    suspend fun refresh(@Body body: RefreshBody): Response<ApiEnvelope<AuthData>>
+
+    // ----- Catalog -----
+    @GET("api/v1/categories")
+    suspend fun categories(): Response<ApiEnvelope<List<CategoryDto>>>
+
+    // ----- Offers -----
+    @GET("api/v1/offers")
+    suspend fun offers(): Response<ApiEnvelope<List<OfferDto>>>
+
+    // ----- Professionals (directory) -----
+    @GET("api/v1/professionals")
+    suspend fun searchProfessionals(
+        @Query("categorySlug") categorySlug: String? = null,
+        @Query("categoryId") categoryId: String? = null,
+        @Query("sort") sort: String = "RECOMMENDED",
+        @Query("lat") lat: Double? = null,
+        @Query("lng") lng: Double? = null,
+        @Query("limit") limit: Int = 50
+    ): Response<ApiEnvelope<List<ProfessionalSummaryDto>>>
+
+    @GET("api/v1/professionals/{userId}")
+    suspend fun professionalDetail(@Path("userId") userId: String): Response<ApiEnvelope<ProfessionalDetailDto>>
+
+    // ----- Account -----
+    @GET("api/v1/me")
+    suspend fun me(): Response<ApiEnvelope<UserDto>>
+
+    @PATCH("api/v1/me")
+    suspend fun updateProfile(@Body body: UpdateProfileBody): Response<ApiEnvelope<UserDto>>
+
+    @GET("api/v1/me/addresses")
+    suspend fun addresses(): Response<ApiEnvelope<List<AddressDto>>>
+
+    // ----- Bookings -----
+    @POST("api/v1/bookings")
+    suspend fun createBooking(@Body body: CreateBookingBody): Response<ApiEnvelope<BookingDto>>
+
+    @GET("api/v1/bookings/{bookingId}")
+    suspend fun booking(@Path("bookingId") bookingId: String): Response<ApiEnvelope<BookingDto>>
+
+    @GET("api/v1/bookings/customer")
+    suspend fun customerBookings(
+        @Query("tab") tab: String? = null,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<ApiEnvelope<PageDto<BookingDto>>>
+
+    // ----- Wallet -----
+    @GET("api/v1/wallet")
+    suspend fun wallet(): Response<ApiEnvelope<WalletDto>>
+
+    @GET("api/v1/wallet/transactions")
+    suspend fun walletTransactions(
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 30
+    ): Response<ApiEnvelope<PageDto<WalletTransactionDto>>>
+}

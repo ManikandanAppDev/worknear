@@ -1,0 +1,28 @@
+# Android / Gradle
+.gradle/
+build/
+**/build/
+local.properties
+*.apk
+*.aab
+*.dex
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backend (see also backend/.gitignore)
+backend/target/
+backend/.env
+backend/uploads/
+
+# Logs / temp
+*.log

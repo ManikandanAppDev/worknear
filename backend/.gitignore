@@ -1,0 +1,31 @@
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### IDE ###
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+
+### Build ###
+*.jar
+*.war
+*.class
+
+### Env / secrets ###
+.env
+.env.local
+*.local.yml
+
+### Uploads (local stub storage) ###
+uploads/
+
+### OS ###
+.DS_Store
+Thumbs.db

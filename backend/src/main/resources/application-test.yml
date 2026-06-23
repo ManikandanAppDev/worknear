@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:worknear;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+worknear:
+  otp:
+    mock: true
+  payment:
+    mock: true
+  storage:
+    mock: true
+  push:
+    mock: true
