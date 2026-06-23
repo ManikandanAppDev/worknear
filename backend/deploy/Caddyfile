@@ -1,0 +1,11 @@
+# Replace dev-api.yourdomain.com with your real domain (or use the Lightsail IP for first test).
+# Caddy obtains HTTPS certificates automatically via Let's Encrypt.
+
+dev-api.yourdomain.com {
+    reverse_proxy 127.0.0.1:8080
+}
+
+# Uncomment for a separate production API host:
+# api.yourdomain.com {
+#     reverse_proxy 127.0.0.1:8080
+# }

@@ -1,0 +1,30 @@
+# Prod profile — public AWS deployment
+# Activate with: SPRING_PROFILES_ACTIVE=prod
+
+logging:
+  level:
+    root: WARN
+    com.worknear: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+
+springdoc:
+  swagger-ui:
+    enabled: false
+  api-docs:
+    enabled: false
+
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+
+worknear:
+  otp:
+    mock: false
+  payment:
+    mock: false
+  storage:
+    mock: false
+  push:
+    mock: false

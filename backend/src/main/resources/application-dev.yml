@@ -1,0 +1,25 @@
+# Dev profile — local Docker / AWS dev instance
+# Activate with: SPRING_PROFILES_ACTIVE=dev
+
+logging:
+  level:
+    root: INFO
+    com.worknear: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  api-docs:
+    enabled: true
+
+worknear:
+  otp:
+    mock: true
+  payment:
+    mock: true
+  storage:
+    mock: true
+  push:
+    mock: true

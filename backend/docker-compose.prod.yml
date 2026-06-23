@@ -1,0 +1,33 @@
+# Production override for AWS Lightsail / VPS.
+# Usage:
+#   cp .env.prod.example .env.prod   # edit secrets first
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#
+# Postgres and Redis are NOT exposed publicly. API binds to localhost only;
+# put Caddy/Nginx on the host in front (see deploy/Caddyfile).
+
+services:
+  postgres:
+    ports: !override []
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    restart: unless-stopped
+
+  redis:
+    ports: !override []
+    restart: unless-stopped
+
+  api:
+    ports: !override
+      - "127.0.0.1:8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      OTP_MOCK: ${OTP_MOCK:-false}
+      PAYMENT_MOCK: ${PAYMENT_MOCK:-false}
+      STORAGE_MOCK: ${STORAGE_MOCK:-false}
+      PUSH_MOCK: ${PUSH_MOCK:-false}
+      STORAGE_BASE_URL: ${STORAGE_BASE_URL:-https://api.example.com/files}
+    restart: unless-stopped
