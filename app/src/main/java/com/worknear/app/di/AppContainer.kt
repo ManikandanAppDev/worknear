@@ -1,6 +1,7 @@
 package com.worknear.app.di
 
 import android.content.Context
+import com.worknear.app.AppConfig
 import com.worknear.app.data.local.TokenStore
 import com.worknear.app.data.remote.AuthInterceptor
 import com.worknear.app.data.remote.WorkNearApi
@@ -26,19 +27,21 @@ class AppContainer(context: Context) {
 
     val tokenStore: TokenStore = TokenStore(appContext)
 
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
-    }
-
-    private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(AuthInterceptor(tokenStore))
-        .addInterceptor(loggingInterceptor)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
+    private val okHttpClient: OkHttpClient = OkHttpClient.Builder().apply {
+        addInterceptor(AuthInterceptor(tokenStore))
+        if (AppConfig.ENABLE_HTTP_LOGS) {
+            addInterceptor(
+                HttpLoggingInterceptor().apply {
+                    level = HttpLoggingInterceptor.Level.BODY
+                }
+            )
+        }
+        connectTimeout(30, TimeUnit.SECONDS)
+        readTimeout(30, TimeUnit.SECONDS)
+    }.build()
 
     private val retrofit: Retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(AppConfig.BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
@@ -51,12 +54,4 @@ class AppContainer(context: Context) {
     val bookingRepository = BookingRepository(api)
     val walletRepository = WalletRepository(api)
     val accountRepository = AccountRepository(api)
-
-    companion object {
-        /**
-         * Android emulator maps the host loopback to 10.0.2.2. For a physical device on the same
-         * network, change this to your machine's LAN IP, e.g. "http://192.168.1.10:8080/".
-         */
-        const val BASE_URL = "http://10.0.2.2:8080/"
-    }
 }

@@ -23,6 +23,15 @@ docker compose up --build
 
 API: `http://localhost:8080` · Swagger UI: `http://localhost:8080/swagger-ui.html`
 
+### AWS / public hosting
+
+See **[deploy/AWS-LIGHTSAIL.md](deploy/AWS-LIGHTSAIL.md)** for Lightsail setup (~$7/mo), HTTPS (Caddy), and prod compose:
+
+```bash
+cp .env.prod.example .env.prod   # edit secrets
+docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.prod up -d --build
+```
+
 ## Quick start (local, without Docker)
 
 Requires Java 17 + Maven, plus a running Postgres and Redis.
