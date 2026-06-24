@@ -1,10 +1,14 @@
 package com.worknear.api.booking;
 
 import com.worknear.api.booking.domain.BookingPhotoType;
+import com.worknear.api.booking.dto.BookingNoteRequest;
 import com.worknear.api.booking.dto.BookingResponse;
 import com.worknear.api.booking.dto.CancelBookingRequest;
+import com.worknear.api.booking.dto.CancelPreviewResponse;
 import com.worknear.api.booking.dto.CreateBookingRequest;
+import com.worknear.api.booking.dto.RescheduleBookingRequest;
 import com.worknear.api.booking.dto.UpdateStatusRequest;
+import com.worknear.api.user.domain.Role;
 import com.worknear.api.common.web.ApiResponse;
 import com.worknear.api.common.web.PageResponse;
 import com.worknear.api.security.CurrentUser;
@@ -65,8 +69,8 @@ public class BookingController {
     @Operation(summary = "Reject a job (professional)")
     @PostMapping("/{bookingId}/reject")
     public ApiResponse<BookingResponse> reject(@CurrentUser UserPrincipal user, @PathVariable UUID bookingId,
-                                              @RequestBody(required = false) CancelBookingRequest request) {
-        String note = request == null ? null : request.reason();
+                                              @RequestBody(required = false) BookingNoteRequest request) {
+        String note = request == null ? null : request.note();
         return ApiResponse.ok(bookingService.reject(user.id(), bookingId, note));
     }
 
@@ -77,12 +81,32 @@ public class BookingController {
         return ApiResponse.ok(bookingService.updateStatus(user.id(), bookingId, request.status(), request.note()));
     }
 
+    @Operation(summary = "Preview cancellation fee and eligibility (customer)")
+    @GetMapping("/{bookingId}/cancel-preview")
+    public ApiResponse<CancelPreviewResponse> cancelPreview(@CurrentUser UserPrincipal user,
+                                                              @PathVariable UUID bookingId) {
+        return ApiResponse.ok(bookingService.cancelPreview(user.id(), bookingId));
+    }
+
     @Operation(summary = "Cancel a booking (customer/professional/admin)")
     @PostMapping("/{bookingId}/cancel")
     public ApiResponse<BookingResponse> cancel(@CurrentUser UserPrincipal user, @PathVariable UUID bookingId,
-                                              @RequestBody(required = false) CancelBookingRequest request) {
-        String reason = request == null ? null : request.reason();
-        return ApiResponse.ok(bookingService.cancel(user.id(), bookingId, reason));
+                                               @Valid @RequestBody(required = false) CancelBookingRequest request) {
+        if (user.role() == Role.CUSTOMER) {
+            if (request == null || request.reasonCode() == null) {
+                throw new com.worknear.api.common.exception.BadRequestException("Cancellation reason is required");
+            }
+            return ApiResponse.ok(bookingService.cancel(user.id(), bookingId, request));
+        }
+        String note = request != null ? request.comment() : null;
+        return ApiResponse.ok(bookingService.cancelByProfessional(user.id(), bookingId, note));
+    }
+
+    @Operation(summary = "Reschedule a booking to a new date/time (customer/admin)")
+    @PostMapping("/{bookingId}/reschedule")
+    public ApiResponse<BookingResponse> reschedule(@CurrentUser UserPrincipal user, @PathVariable UUID bookingId,
+                                                   @Valid @RequestBody RescheduleBookingRequest request) {
+        return ApiResponse.ok(bookingService.reschedule(user.id(), bookingId, request));
     }
 
     @Operation(summary = "Upload a booking photo (type: PROBLEM|WORK)")

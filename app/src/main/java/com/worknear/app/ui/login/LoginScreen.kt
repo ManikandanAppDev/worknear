@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,6 +26,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.worknear.app.di.AppViewModelProvider
+import com.worknear.app.ui.components.WorkNearAlert
+import com.worknear.app.ui.components.WorkNearAlertType
 import com.worknear.app.ui.components.WorkNearTextField
 import com.worknear.app.ui.theme.DarkText
 import com.worknear.app.ui.theme.MediumGray
@@ -136,11 +137,9 @@ private fun LoginContent(
 
             if (uiState.devCode != null) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Dev mode OTP: ${uiState.devCode}",
-                    color = PrimaryBlue,
-                    fontSize = 13.sp,
-                    fontFamily = sansProText
+                WorkNearAlert(
+                    message = "Dev mode OTP: ${uiState.devCode}",
+                    type = WorkNearAlertType.INFO
                 )
             }
 
@@ -159,11 +158,9 @@ private fun LoginContent(
 
         if (uiState.errorMessage != null) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = uiState.errorMessage,
-                color = Color.Red,
-                fontSize = 14.sp,
-                fontFamily = sansProText
+            WorkNearAlert(
+                message = uiState.errorMessage,
+                type = WorkNearAlertType.ERROR
             )
         }
 

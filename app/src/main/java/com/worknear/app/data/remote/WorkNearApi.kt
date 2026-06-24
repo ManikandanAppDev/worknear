@@ -4,8 +4,11 @@ import com.worknear.app.data.remote.dto.AddressDto
 import com.worknear.app.data.remote.dto.ApiEnvelope
 import com.worknear.app.data.remote.dto.AuthData
 import com.worknear.app.data.remote.dto.BookingDto
+import com.worknear.app.data.remote.dto.CancelBookingBody
+import com.worknear.app.data.remote.dto.CancelPreviewData
 import com.worknear.app.data.remote.dto.CategoryDto
 import com.worknear.app.data.remote.dto.CreateBookingBody
+import com.worknear.app.data.remote.dto.RescheduleBookingBody
 import com.worknear.app.data.remote.dto.OfferDto
 import com.worknear.app.data.remote.dto.OtpRequestBody
 import com.worknear.app.data.remote.dto.OtpRequestData
@@ -76,6 +79,21 @@ interface WorkNearApi {
 
     @GET("api/v1/bookings/{bookingId}")
     suspend fun booking(@Path("bookingId") bookingId: String): Response<ApiEnvelope<BookingDto>>
+
+    @GET("api/v1/bookings/{bookingId}/cancel-preview")
+    suspend fun cancelPreview(@Path("bookingId") bookingId: String): Response<ApiEnvelope<CancelPreviewData>>
+
+    @POST("api/v1/bookings/{bookingId}/cancel")
+    suspend fun cancelBooking(
+        @Path("bookingId") bookingId: String,
+        @Body body: CancelBookingBody
+    ): Response<ApiEnvelope<BookingDto>>
+
+    @POST("api/v1/bookings/{bookingId}/reschedule")
+    suspend fun rescheduleBooking(
+        @Path("bookingId") bookingId: String,
+        @Body body: RescheduleBookingBody
+    ): Response<ApiEnvelope<BookingDto>>
 
     @GET("api/v1/bookings/customer")
     suspend fun customerBookings(

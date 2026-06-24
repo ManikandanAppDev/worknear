@@ -35,7 +35,21 @@ public class BookingMapper {
                 b.getScheduledDate(), b.getSlotStart(), b.getSlotEnd(),
                 b.getAddressLine(), b.getCity(), b.getLatitude(), b.getLongitude(),
                 b.getProblemDescription(), b.getStatus(), b.getAmount(), b.getCommission(), b.getProEarning(),
-                b.getPaymentMethod(), b.getConfirmedAt(), b.getCompletedAt(), b.getCreatedAt(), photos);
+                b.getPaymentMethod(), b.getConfirmedAt(), b.getCompletedAt(), b.getCreatedAt(), photos,
+                b.getRescheduleCount(), RESCHEDULE_MAX,
+                canReschedule(b), canCancel(b));
+    }
+
+    private static final int RESCHEDULE_MAX = 2;
+
+    private static boolean canReschedule(Booking b) {
+        return (b.getStatus() == com.worknear.api.booking.domain.BookingStatus.PENDING
+                || b.getStatus() == com.worknear.api.booking.domain.BookingStatus.CONFIRMED)
+                && b.getRescheduleCount() < RESCHEDULE_MAX;
+    }
+
+    private static boolean canCancel(Booking b) {
+        return b.getStatus().canTransitionTo(com.worknear.api.booking.domain.BookingStatus.CANCELLED);
     }
 
     private String nameOf(UUID userId) {

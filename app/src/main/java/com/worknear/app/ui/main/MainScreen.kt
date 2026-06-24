@@ -48,6 +48,7 @@ fun MainScreen(
     onNavigateToProfessional: (String) -> Unit,
     onNavigateToBookService: (String) -> Unit,
     onNavigateToChat: (String) -> Unit,
+    onNavigateToBookingDetail: (String) -> Unit = {},
     onLogout: () -> Unit = {},
     onCategoryClick: (ServiceCategory) -> Unit = { onNavigateToServiceList(it.id) }
 ) {
@@ -71,7 +72,7 @@ fun MainScreen(
             )
             MainTab.BOOKINGS -> MyBookingsScreen(
                 modifier = Modifier.padding(padding),
-                onChatClick = onNavigateToChat
+                onBookingClick = onNavigateToBookingDetail
             )
             MainTab.CHAT -> ChatListScreen(
                 modifier = Modifier.padding(padding),

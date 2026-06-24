@@ -6,7 +6,10 @@ import com.worknear.api.booking.domain.BookingPhotoType;
 import com.worknear.api.booking.domain.BookingStatus;
 import com.worknear.api.booking.domain.BookingStatusHistory;
 import com.worknear.api.booking.dto.BookingResponse;
+import com.worknear.api.booking.dto.CancelBookingRequest;
+import com.worknear.api.booking.dto.CancelPreviewResponse;
 import com.worknear.api.booking.dto.CreateBookingRequest;
+import com.worknear.api.booking.dto.RescheduleBookingRequest;
 import com.worknear.api.catalog.ServiceCategoryRepository;
 import com.worknear.api.chat.domain.ChatThread;
 import com.worknear.api.chat.ChatThreadRepository;
@@ -35,7 +38,12 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,6 +52,20 @@ import java.util.UUID;
 public class BookingService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+
+    public static final int MAX_RESCHEDULES = 2;
+    private static final int FREE_LATE_CANCELS_PER_MONTH = 3;
+    private static final int EARLY_CANCEL_HOURS = 24;
+    private static final BigDecimal LATE_CANCEL_FEE = new BigDecimal("50.00");
+
+    /** Authoritative timezone for all booking date/time validation (ignores the device clock). */
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Kolkata");
+    private static final int MAX_BOOKING_DAYS_AHEAD = 7;
+
+    /** Statuses that count as an "active" booking for duplicate-prevention. */
+    private static final List<BookingStatus> ACTIVE_STATUSES = List.of(
+            BookingStatus.PENDING, BookingStatus.CONFIRMED,
+            BookingStatus.ON_THE_WAY, BookingStatus.IN_PROGRESS);
 
     private final BookingRepository bookingRepository;
     private final BookingPhotoRepository photoRepository;
@@ -72,8 +94,13 @@ public class BookingService {
         if (!categoryRepository.existsById(req.categoryId())) {
             throw NotFoundException.of("Category", req.categoryId());
         }
-        if (!req.slotEnd().isAfter(req.slotStart())) {
-            throw new BadRequestException("Slot end time must be after start time");
+        validateSchedule(req.scheduledDate(), req.slotStart(), req.slotEnd());
+
+        if (bookingRepository.existsByCustomerIdAndProfessionalIdAndStatusIn(
+                customerId, req.professionalId(), ACTIVE_STATUSES)) {
+            throw new BadRequestException("DUPLICATE_ACTIVE_BOOKING",
+                    "You already have an active booking with this professional. "
+                            + "Please complete or cancel it before booking again.");
         }
 
         BigDecimal amount = professionalServiceRepository
@@ -172,21 +199,123 @@ public class BookingService {
         return mapper.toResponse(booking);
     }
 
-    @Transactional
-    public BookingResponse cancel(UUID userId, UUID bookingId, String reason) {
+    @Transactional(readOnly = true)
+    public CancelPreviewResponse cancelPreview(UUID userId, UUID bookingId) {
         Booking booking = require(bookingId);
-        boolean isCustomer = booking.getCustomerId().equals(userId);
+        if (!booking.getCustomerId().equals(userId) && !isAdmin(userId)) {
+            throw new ForbiddenException("Only the customer can preview cancellation for this booking");
+        }
+        if (!booking.getStatus().canTransitionTo(BookingStatus.CANCELLED)) {
+            return new CancelPreviewResponse(false, false, BigDecimal.ZERO, null, false, 0,
+                    0, FREE_LATE_CANCELS_PER_MONTH, FREE_LATE_CANCELS_PER_MONTH,
+                    walletService.getWallet(userId).balance(), true,
+                    "This booking can no longer be cancelled.");
+        }
+        CancelQuote quote = computeCancelQuote(booking);
+        BigDecimal balance = walletService.getWallet(userId).balance();
+        boolean sufficient = !quote.feeApplies() || balance.compareTo(quote.feeAmount()) >= 0;
+        return new CancelPreviewResponse(
+                true,
+                quote.feeApplies(),
+                quote.feeAmount(),
+                quote.feeReason(),
+                quote.lateCancel(),
+                quote.hoursUntilSlot(),
+                quote.lateCancelsUsedThisMonth(),
+                FREE_LATE_CANCELS_PER_MONTH,
+                quote.lateCancelsRemaining(),
+                balance,
+                sufficient,
+                quote.message());
+    }
+
+    @Transactional
+    public BookingResponse cancel(UUID userId, UUID bookingId, CancelBookingRequest req) {
+        Booking booking = require(bookingId);
+        if (!booking.getCustomerId().equals(userId) && !isAdmin(userId)) {
+            throw new ForbiddenException("Only the customer can cancel this booking");
+        }
+
+        CancelPreviewResponse preview = cancelPreview(userId, bookingId);
+        if (!preview.canCancel()) {
+            throw new BadRequestException("CANNOT_CANCEL", preview.message());
+        }
+        if (preview.feeApplies()) {
+            if (!preview.sufficientWalletBalance()) {
+                throw new BadRequestException("INSUFFICIENT_BALANCE",
+                        "Insufficient wallet balance. Please add ₹"
+                                + preview.feeAmount().stripTrailingZeros().toPlainString()
+                                + " to your wallet.");
+            }
+            walletService.debit(userId, preview.feeAmount(), TransactionReason.CANCELLATION_FEE,
+                    booking.getId(), "Cancellation fee for booking " + booking.getCode());
+            booking.setCancellationFee(preview.feeAmount());
+        }
+        booking.setLateCancel(preview.lateCancel());
+        booking.setCancellationReason(req.reasonCode().name());
+        booking.setCancellationComment(req.comment());
+
+        transition(booking, BookingStatus.CANCELLED, userId, "Cancelled by customer");
+        booking.setCancelledBy("CUSTOMER");
+        booking.setCancelledAt(Instant.now());
+
+        if (booking.getProfessionalId() != null) {
+            notificationService.notifyUser(booking.getProfessionalId(), "BOOKING_CANCELLED",
+                    "Booking cancelled", "Booking " + booking.getCode() + " was cancelled");
+        }
+        return mapper.toResponse(booking);
+    }
+
+    @Transactional
+    public BookingResponse cancelByProfessional(UUID userId, UUID bookingId, String note) {
+        Booking booking = require(bookingId);
         boolean isPro = userId.equals(booking.getProfessionalId());
-        if (!isCustomer && !isPro && !isAdmin(userId)) {
+        if (!isPro && !isAdmin(userId)) {
             throw new ForbiddenException("You cannot cancel this booking");
         }
-        transition(booking, BookingStatus.CANCELLED, userId, reason);
-        booking.setCancellationReason(reason);
-        booking.setCancelledBy(isCustomer ? "CUSTOMER" : isPro ? "PROFESSIONAL" : "ADMIN");
-        UUID notify = isCustomer ? booking.getProfessionalId() : booking.getCustomerId();
-        if (notify != null) {
-            notificationService.notifyUser(notify, "BOOKING_CANCELLED",
-                    "Booking cancelled", "Booking " + booking.getCode() + " was cancelled");
+        if (!booking.getStatus().canTransitionTo(BookingStatus.CANCELLED)) {
+            throw new BadRequestException("CANNOT_CANCEL", "This booking can no longer be cancelled.");
+        }
+        transition(booking, BookingStatus.CANCELLED, userId, note);
+        booking.setCancellationReason(note);
+        booking.setCancelledBy(isPro ? "PROFESSIONAL" : "ADMIN");
+        booking.setCancelledAt(Instant.now());
+        notificationService.notifyUser(booking.getCustomerId(), "BOOKING_CANCELLED",
+                "Booking cancelled", "Booking " + booking.getCode() + " was cancelled");
+        return mapper.toResponse(booking);
+    }
+
+    @Transactional
+    public BookingResponse reschedule(UUID userId, UUID bookingId, RescheduleBookingRequest req) {
+        Booking booking = require(bookingId);
+        if (!booking.getCustomerId().equals(userId) && !isAdmin(userId)) {
+            throw new ForbiddenException("Only the customer can reschedule this booking");
+        }
+        if (booking.getStatus() != BookingStatus.PENDING && booking.getStatus() != BookingStatus.CONFIRMED) {
+            throw new BadRequestException("CANNOT_RESCHEDULE",
+                    "This booking can no longer be rescheduled.");
+        }
+        if (booking.getRescheduleCount() >= MAX_RESCHEDULES) {
+            throw new BadRequestException("RESCHEDULE_LIMIT",
+                    "You can reschedule this booking at most " + MAX_RESCHEDULES + " times.");
+        }
+        validateSchedule(req.scheduledDate(), req.slotStart(), req.slotEnd());
+
+        booking.setScheduledDate(req.scheduledDate());
+        booking.setSlotStart(req.slotStart());
+        booking.setSlotEnd(req.slotEnd());
+        booking.setRescheduleCount(booking.getRescheduleCount() + 1);
+        if (booking.getStatus() == BookingStatus.CONFIRMED) {
+            booking.setStatus(BookingStatus.PENDING);
+            booking.setConfirmedAt(null);
+        }
+        recordHistory(booking, booking.getStatus(),
+                "Rescheduled to " + req.scheduledDate() + " " + req.slotStart() + "-" + req.slotEnd(), userId);
+
+        if (booking.getProfessionalId() != null) {
+            notificationService.notifyUser(booking.getProfessionalId(), "BOOKING_RESCHEDULED",
+                    "Booking rescheduled",
+                    "Booking " + booking.getCode() + " was moved to " + req.scheduledDate());
         }
         return mapper.toResponse(booking);
     }
@@ -206,6 +335,69 @@ public class BookingService {
     }
 
     // ---- internals ----
+
+    private void validateSchedule(LocalDate date, LocalTime start, LocalTime end) {
+        if (!end.isAfter(start)) {
+            throw new BadRequestException("Slot end time must be after start time");
+        }
+        LocalDate today = LocalDate.now(BUSINESS_ZONE);
+        LocalDate maxDate = today.plusDays(MAX_BOOKING_DAYS_AHEAD);
+        if (date.isBefore(today)) {
+            throw new BadRequestException("INVALID_DATE", "Booking date cannot be in the past.");
+        }
+        if (date.isAfter(maxDate)) {
+            throw new BadRequestException("INVALID_DATE",
+                    "You can only book up to " + MAX_BOOKING_DAYS_AHEAD + " days in advance.");
+        }
+        if (date.isEqual(today) && !start.isAfter(LocalTime.now(BUSINESS_ZONE))) {
+            throw new BadRequestException("INVALID_TIME", "Please pick a time later than the current time.");
+        }
+    }
+
+    private CancelQuote computeCancelQuote(Booking booking) {
+        double hoursUntil = hoursUntilSlot(booking);
+        boolean late = hoursUntil < EARLY_CANCEL_HOURS;
+        int used = countLateCancelsThisMonth(booking.getCustomerId());
+        int remaining = Math.max(0, FREE_LATE_CANCELS_PER_MONTH - used);
+
+        if (!late) {
+            return new CancelQuote(false, BigDecimal.ZERO, null, false, hoursUntil, used, remaining,
+                    "Free cancellation — your slot is more than 24 hours away.");
+        }
+        if (used < FREE_LATE_CANCELS_PER_MONTH) {
+            return new CancelQuote(false, BigDecimal.ZERO, null, true, hoursUntil, used, remaining,
+                    "Late cancellation — " + (used + 1) + " of " + FREE_LATE_CANCELS_PER_MONTH
+                            + " free late cancellations used this month.");
+        }
+        return new CancelQuote(true, LATE_CANCEL_FEE, "LATE_CANCEL_QUOTA_EXCEEDED", true, hoursUntil, used, 0,
+                "Less than 24 hours to your slot and you've used your free late cancellations. "
+                        + "A ₹50 fee applies.");
+    }
+
+    private double hoursUntilSlot(Booking booking) {
+        ZonedDateTime slotStart = ZonedDateTime.of(
+                booking.getScheduledDate(), booking.getSlotStart(), BUSINESS_ZONE);
+        long seconds = Duration.between(Instant.now(), slotStart.toInstant()).getSeconds();
+        return seconds / 3600.0;
+    }
+
+    private int countLateCancelsThisMonth(UUID customerId) {
+        ZonedDateTime monthStart = LocalDate.now(BUSINESS_ZONE)
+                .withDayOfMonth(1)
+                .atStartOfDay(BUSINESS_ZONE);
+        return (int) bookingRepository.countLateCustomerCancelsSince(customerId, monthStart.toInstant());
+    }
+
+    private record CancelQuote(
+            boolean feeApplies,
+            BigDecimal feeAmount,
+            String feeReason,
+            boolean lateCancel,
+            double hoursUntilSlot,
+            int lateCancelsUsedThisMonth,
+            int lateCancelsRemaining,
+            String message
+    ) {}
 
     private void completeBooking(Booking booking) {
         booking.setCompletedAt(Instant.now());

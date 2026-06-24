@@ -4,6 +4,8 @@ import android.content.Context
 import com.worknear.app.AppConfig
 import com.worknear.app.data.local.TokenStore
 import com.worknear.app.data.remote.AuthInterceptor
+import com.worknear.app.data.remote.AuthRefreshApi
+import com.worknear.app.data.remote.TokenAuthenticator
 import com.worknear.app.data.remote.WorkNearApi
 import com.worknear.app.data.repository.AccountRepository
 import com.worknear.app.data.repository.AuthRepository
@@ -27,15 +29,27 @@ class AppContainer(context: Context) {
 
     val tokenStore: TokenStore = TokenStore(appContext)
 
+    private fun loggingInterceptor(): HttpLoggingInterceptor =
+        HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY }
+
+    // Bare client used only to refresh tokens. No auth interceptor/authenticator -> no recursion.
+    private val refreshHttpClient: OkHttpClient = OkHttpClient.Builder().apply {
+        if (AppConfig.ENABLE_HTTP_LOGS) addInterceptor(loggingInterceptor())
+        connectTimeout(30, TimeUnit.SECONDS)
+        readTimeout(30, TimeUnit.SECONDS)
+    }.build()
+
+    private val authRefreshApi: AuthRefreshApi = Retrofit.Builder()
+        .baseUrl(AppConfig.BASE_URL)
+        .client(refreshHttpClient)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+        .create(AuthRefreshApi::class.java)
+
     private val okHttpClient: OkHttpClient = OkHttpClient.Builder().apply {
         addInterceptor(AuthInterceptor(tokenStore))
-        if (AppConfig.ENABLE_HTTP_LOGS) {
-            addInterceptor(
-                HttpLoggingInterceptor().apply {
-                    level = HttpLoggingInterceptor.Level.BODY
-                }
-            )
-        }
+        authenticator(TokenAuthenticator(tokenStore, authRefreshApi))
+        if (AppConfig.ENABLE_HTTP_LOGS) addInterceptor(loggingInterceptor())
         connectTimeout(30, TimeUnit.SECONDS)
         readTimeout(30, TimeUnit.SECONDS)
     }.build()

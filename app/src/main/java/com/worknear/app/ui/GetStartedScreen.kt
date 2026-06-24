@@ -2,7 +2,6 @@ package com.worknear.app.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,17 +66,6 @@ fun OnboardingScreen(
                             )
                         )
                     )
-            )
-
-            Text(
-                text = stringResource(R.string.skip),
-                color = Color.White,
-                fontSize = 15.sp,
-                fontFamily = sansProText,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .clickable(onClick = onGetStarted)
-                    .padding(top = 48.dp, end = 24.dp)
             )
 
             Column(

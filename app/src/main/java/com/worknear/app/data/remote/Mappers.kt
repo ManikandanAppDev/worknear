@@ -99,20 +99,32 @@ fun ProfessionalDetailDto.toUiModel(): Professional {
 }
 
 fun BookingDto.toUiModel(): Booking = Booking(
+    uuid = id.orEmpty(),
     id = code ?: id.orEmpty(),
     serviceName = categoryName ?: "Service",
     professionalName = professionalName ?: "Professional",
     professionalId = professionalId.orEmpty(),
     date = formatDate(scheduledDate),
+    rawDate = scheduledDate.orEmpty(),
     time = formatTimeRange(slotStart, slotEnd),
+    slotStart = slotStart.orEmpty(),
+    slotEnd = slotEnd.orEmpty(),
     address = listOfNotNull(addressLine?.takeIf { it.isNotBlank() }, city?.takeIf { it.isNotBlank() })
         .joinToString(", "),
     price = amount.toInt(),
     status = mapBookingStatus(status),
-    imageRes = avatarFor(professionalId)
+    imageRes = avatarFor(professionalId),
+    rescheduleCount = rescheduleCount,
+    rescheduleMax = rescheduleMax,
+    canReschedule = canReschedule,
+    canCancel = canCancel
 )
 
 private fun mapBookingStatus(raw: String?): BookingStatus = when (raw?.uppercase(Locale.ENGLISH)) {
+    "PENDING" -> BookingStatus.PENDING
+    "CONFIRMED" -> BookingStatus.CONFIRMED
+    "ON_THE_WAY" -> BookingStatus.ON_THE_WAY
+    "IN_PROGRESS" -> BookingStatus.IN_PROGRESS
     "COMPLETED" -> BookingStatus.COMPLETED
     "CANCELLED", "CANCELED", "REJECTED" -> BookingStatus.CANCELLED
     else -> BookingStatus.CONFIRMED

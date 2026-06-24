@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.worknear.app.WorkNearApplication
 import com.worknear.app.ui.booking.BookServiceViewModel
 import com.worknear.app.ui.booking.BookingConfirmedViewModel
+import com.worknear.app.ui.bookings.BookingDetailViewModel
 import com.worknear.app.ui.bookings.MyBookingsViewModel
 import com.worknear.app.ui.home.HomeViewModel
 import com.worknear.app.ui.login.LoginViewModel
@@ -47,6 +48,8 @@ object AppViewModelProvider {
         }
 
         initializer { BookingConfirmedViewModel(container().bookingRepository) }
+
+        initializer { BookingDetailViewModel(container().bookingRepository) }
 
         initializer { MyBookingsViewModel(container().bookingRepository) }
 

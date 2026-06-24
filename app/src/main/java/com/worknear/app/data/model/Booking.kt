@@ -1,7 +1,10 @@
 package com.worknear.app.data.model
 
 enum class BookingStatus {
+    PENDING,
     CONFIRMED,
+    ON_THE_WAY,
+    IN_PROGRESS,
     COMPLETED,
     CANCELLED
 }
@@ -12,72 +15,44 @@ enum class BookingTab {
     CANCELLED
 }
 
+enum class CancellationReasonCode(val label: String) {
+    PRO_UNAVAILABLE("Professional unavailable"),
+    CHANGE_OF_PLANS("Change of plans"),
+    BOOKING_MISTAKE("Booked by mistake"),
+    SERVICE_NOT_NEEDED("Service no longer needed"),
+    OTHER("Other")
+}
+
 data class Booking(
+    val uuid: String,
     val id: String,
     val serviceName: String,
     val professionalName: String,
     val professionalId: String,
     val date: String,
+    val rawDate: String,
     val time: String,
+    val slotStart: String,
+    val slotEnd: String,
     val address: String,
     val price: Int,
     val status: BookingStatus,
-    val imageRes: Int
+    val imageRes: Int,
+    val rescheduleCount: Int = 0,
+    val rescheduleMax: Int = 2,
+    val canReschedule: Boolean = false,
+    val canCancel: Boolean = false
 )
 
-object Bookings {
-    val all = listOf(
-        Booking(
-            id = "BK12345",
-            serviceName = "Electrician",
-            professionalName = "Ramesh Kumar",
-            professionalId = "1",
-            date = "24 Jun 2026",
-            time = "10:00 AM - 12:00 PM",
-            address = "42, 2nd Street, Anna Nagar, Chennai - 600040",
-            price = 299,
-            status = BookingStatus.CONFIRMED,
-            imageRes = com.worknear.app.R.drawable.avatar_one
-        ),
-        Booking(
-            id = "BK12346",
-            serviceName = "Plumber",
-            professionalName = "Suresh Babu",
-            professionalId = "2",
-            date = "28 Jun 2026",
-            time = "2:00 PM - 4:00 PM",
-            address = "42, 2nd Street, Anna Nagar, Chennai - 600040",
-            price = 349,
-            status = BookingStatus.CONFIRMED,
-            imageRes = com.worknear.app.R.drawable.avatar_two
-        ),
-        Booking(
-            id = "BK12300",
-            serviceName = "AC Repair",
-            professionalName = "Karthik Raj",
-            professionalId = "3",
-            date = "10 Jun 2026",
-            time = "11:00 AM - 1:00 PM",
-            address = "42, 2nd Street, Anna Nagar, Chennai - 600040",
-            price = 499,
-            status = BookingStatus.COMPLETED,
-            imageRes = com.worknear.app.R.drawable.avatar_three
-        ),
-        Booking(
-            id = "BK12290",
-            serviceName = "Painter",
-            professionalName = "Vijay Prasad",
-            professionalId = "4",
-            date = "05 Jun 2026",
-            time = "9:00 AM - 11:00 AM",
-            address = "42, 2nd Street, Anna Nagar, Chennai - 600040",
-            price = 599,
-            status = BookingStatus.CANCELLED,
-            imageRes = com.worknear.app.R.drawable.avatar_four
-        )
-    )
-
-    fun byId(id: String): Booking? = all.find { it.id == id }
-
-    fun byStatus(status: BookingStatus): List<Booking> = all.filter { it.status == status }
-}
+data class CancelPreview(
+    val canCancel: Boolean,
+    val feeApplies: Boolean,
+    val feeAmount: Int,
+    val message: String,
+    val lateCancel: Boolean,
+    val freeLateCancelsUsed: Int,
+    val freeLateCancelsLimit: Int,
+    val freeLateCancelsRemaining: Int,
+    val walletBalance: Int,
+    val sufficientWalletBalance: Boolean
+)

@@ -6,5 +6,6 @@ public enum TransactionReason {
     REFUND,
     PAYOUT,
     EARNING,
-    ADJUSTMENT
+    ADJUSTMENT,
+    CANCELLATION_FEE
 }

@@ -2,7 +2,7 @@ package com.worknear.api.booking.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.worknear.api.payment.domain.PaymentMethod;
-import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
@@ -14,7 +14,7 @@ public record CreateBookingRequest(
         @NotNull UUID professionalId,
         @NotNull UUID categoryId,
 
-        @NotNull @Future LocalDate scheduledDate,
+        @NotNull @FutureOrPresent LocalDate scheduledDate,
         @NotNull @JsonFormat(pattern = "HH:mm") LocalTime slotStart,
         @NotNull @JsonFormat(pattern = "HH:mm") LocalTime slotEnd,
 

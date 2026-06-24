@@ -36,5 +36,9 @@ public record BookingResponse(
         Instant confirmedAt,
         Instant completedAt,
         Instant createdAt,
-        List<BookingPhotoResponse> photos
+        List<BookingPhotoResponse> photos,
+        int rescheduleCount,
+        int rescheduleMax,
+        boolean canReschedule,
+        boolean canCancel
 ) {}

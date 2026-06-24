@@ -21,10 +21,10 @@ server:
 
 worknear:
   otp:
-    mock: false
+    mock: ${OTP_MOCK:false}
   payment:
-    mock: false
+    mock: ${PAYMENT_MOCK:false}
   storage:
-    mock: false
+    mock: ${STORAGE_MOCK:false}
   push:
-    mock: false
+    mock: ${PUSH_MOCK:false}

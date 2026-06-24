@@ -1,10 +1,14 @@
 package com.worknear.app.data.repository
 
 import com.worknear.app.data.model.Booking
+import com.worknear.app.data.model.CancelPreview
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.remote.WorkNearApi
 import com.worknear.app.data.remote.dto.BookingDto
+import com.worknear.app.data.remote.dto.CancelBookingBody
+import com.worknear.app.data.remote.dto.CancelPreviewData
 import com.worknear.app.data.remote.dto.CreateBookingBody
+import com.worknear.app.data.remote.dto.RescheduleBookingBody
 import com.worknear.app.data.remote.safeCall
 import com.worknear.app.data.remote.toUiModel
 
@@ -20,6 +24,38 @@ class BookingRepository(private val api: WorkNearApi) {
         }
     }
 
+    suspend fun cancelPreview(bookingId: String): ApiResult<CancelPreview> {
+        return when (val r = safeCall { api.cancelPreview(bookingId) }) {
+            is ApiResult.Success -> ApiResult.Success(r.data.toUi())
+            is ApiResult.Error -> r
+        }
+    }
+
+    suspend fun cancelBooking(
+        bookingId: String,
+        reasonCode: String,
+        comment: String?
+    ): ApiResult<Booking> {
+        val body = CancelBookingBody(reasonCode = reasonCode, comment = comment)
+        return when (val r = safeCall { api.cancelBooking(bookingId, body) }) {
+            is ApiResult.Success -> ApiResult.Success(r.data.toUiModel())
+            is ApiResult.Error -> r
+        }
+    }
+
+    suspend fun rescheduleBooking(
+        bookingId: String,
+        scheduledDate: String,
+        slotStart: String,
+        slotEnd: String
+    ): ApiResult<Booking> {
+        val body = RescheduleBookingBody(scheduledDate, slotStart, slotEnd)
+        return when (val r = safeCall { api.rescheduleBooking(bookingId, body) }) {
+            is ApiResult.Success -> ApiResult.Success(r.data.toUiModel())
+            is ApiResult.Error -> r
+        }
+    }
+
     /** tab: UPCOMING | COMPLETED | CANCELLED */
     suspend fun customerBookings(tab: String): ApiResult<List<Booking>> {
         return when (val r = safeCall { api.customerBookings(tab = tab) }) {
@@ -28,3 +64,16 @@ class BookingRepository(private val api: WorkNearApi) {
         }
     }
 }
+
+private fun CancelPreviewData.toUi() = CancelPreview(
+    canCancel = canCancel,
+    feeApplies = feeApplies,
+    feeAmount = feeAmount.toInt(),
+    message = message.orEmpty(),
+    lateCancel = lateCancel,
+    freeLateCancelsUsed = freeLateCancelsUsedThisMonth,
+    freeLateCancelsLimit = freeLateCancelsLimit,
+    freeLateCancelsRemaining = freeLateCancelsRemaining,
+    walletBalance = walletBalance.toInt(),
+    sufficientWalletBalance = sufficientWalletBalance
+)

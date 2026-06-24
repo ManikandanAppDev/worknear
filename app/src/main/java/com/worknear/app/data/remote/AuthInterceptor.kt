@@ -17,7 +17,7 @@ class AuthInterceptor(private val tokenStore: TokenStore) : Interceptor {
         val token = if (isAuthEndpoint) null else tokenStore.accessTokenBlocking()
         val newRequest = if (!isAuthEndpoint && !token.isNullOrBlank()) {
             request.newBuilder()
-                .addHeader("Authorization", "Bearer $token")
+                .header("Authorization", "Bearer $token")
                 .build()
         } else {
             request

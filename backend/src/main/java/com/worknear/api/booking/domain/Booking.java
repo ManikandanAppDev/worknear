@@ -73,8 +73,23 @@ public class Booking extends BaseEntity {
     @Column(name = "cancellation_reason")
     private String cancellationReason;
 
+    @Column(name = "cancellation_comment", length = 500)
+    private String cancellationComment;
+
+    @Column(name = "late_cancel", nullable = false)
+    private boolean lateCancel = false;
+
+    @Column(name = "cancellation_fee")
+    private BigDecimal cancellationFee;
+
+    @Column(name = "reschedule_count", nullable = false)
+    private int rescheduleCount = 0;
+
     @Column(name = "cancelled_by")
     private String cancelledBy;
+
+    @Column(name = "cancelled_at")
+    private Instant cancelledAt;
 
     @Column(name = "confirmed_at")
     private Instant confirmedAt;

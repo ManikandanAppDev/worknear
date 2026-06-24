@@ -26,6 +26,19 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
 
     Page<Booking> findByProfessionalIdAndStatusIn(UUID professionalId, Collection<BookingStatus> statuses, Pageable pageable);
 
+    boolean existsByCustomerIdAndProfessionalIdAndStatusIn(UUID customerId, UUID professionalId,
+                                                           Collection<BookingStatus> statuses);
+
+    @Query("""
+            SELECT COUNT(b) FROM Booking b
+            WHERE b.customerId = :customerId
+              AND b.status = com.worknear.api.booking.domain.BookingStatus.CANCELLED
+              AND b.cancelledBy = 'CUSTOMER'
+              AND b.lateCancel = true
+              AND b.cancelledAt >= :since
+            """)
+    long countLateCustomerCancelsSince(@Param("customerId") UUID customerId, @Param("since") Instant since);
+
     long countByProfessionalIdAndStatus(UUID professionalId, BookingStatus status);
 
     long countByStatus(BookingStatus status);

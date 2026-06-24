@@ -185,21 +185,82 @@ Move Postgres to **RDS PostgreSQL**; point `DB_URL` in `.env.prod` to the RDS en
 
 ## Part 8 — Second environment (prod)
 
-1. Create another Lightsail instance `worknear-prod-api`.
-2. Copy repo, use **different** `.env.prod` secrets and domain `api.yourdomain.com`.
-3. Set `OTP_MOCK=false` when SMS is wired.
-4. Android **prod** flavor:
+**Decisions (locked in):**
 
-```kotlin
-create("prod") {
-    buildConfigField("String", "BASE_URL", "\"https://api.yourdomain.com/\"")
-    buildConfigField("boolean", "ENABLE_HTTP_LOGS", "false")
-}
+| Item | Choice |
+|------|--------|
+| Prod server | New Lightsail instance (same as dev), name: `worknear-prod-api` |
+| Dev server | Existing `worknear-dev-api` (IP `65.1.135.244`) |
+| SMS / OTP | Mock on dev for now; real SMS on prod **later** (after app flow is complete) |
+| Android dev | `devDebug` → dev API only (`com.worknear.app.dev`) |
+| Android prod | `prodRelease` → prod API only (`com.worknear.app`) |
+| Prod secrets | Generate **new** `DB_PASSWORD` + `JWT_SECRET` when prod instance is created (never reuse dev) |
+
+### Suggested domain names
+
+Buy one root domain (recommended for India: **`worknear.in`**, or **`worknear.com`**). Then:
+
+| Purpose | DNS name | Points to |
+|---------|----------|-----------|
+| **Prod API** (Android prod flavor) | `api.worknear.in` | Prod Lightsail static IP |
+| **Dev API** (Android dev flavor) | `dev-api.worknear.in` | Dev Lightsail static IP |
+| **File uploads** (STORAGE_BASE_URL) | same as API + `/files` | e.g. `https://api.worknear.in/files` |
+| **Admin web** (later) | `admin.worknear.in` | separate host or same prod server |
+
+**Until you buy a domain:** use sslip.io on each instance (like dev today):
+
+- Dev: `https://65-1-135-244.sslip.io/`
+- Prod: `https://<PROD-STATIC-IP-with-dashes>.sslip.io/` (set after instance is created)
+
+Update `app/src/prod/java/.../AppConfig.kt` → `BASE_URL` when prod IP/domain is ready.
+
+### Prod instance setup (when you create it)
+
+1. Create Lightsail **`worknear-prod-api`** (Ubuntu 22.04, 1 GB, Mumbai `ap-south-1`).
+2. Attach a **static IP**; open ports 22, 80, 443.
+3. Point **`api.worknear.in`** (or sslip.io) A record → prod static IP.
+4. SSH, clone repo to `/opt/worknear`, copy `.env.prod.example` → `.env.prod`.
+5. Set prod `.env.prod` (see checklist below).
+6. Caddy on prod with host `api.worknear.in` (see `deploy/Caddyfile`).
+7. Deploy: same `docker compose ... up -d --build` as dev.
+
+### Before first prod test — secrets checklist (reminder)
+
+When you are ready to test **`prodRelease`**, generate **new** values on the prod server:
+
+```bash
+openssl rand -base64 32   # DB_PASSWORD
+openssl rand -base64 48   # JWT_SECRET
 ```
 
-Build **`prodRelease`** for store / prod testing.
+In prod `.env.prod`:
 
-Same Git branch — deploy the same commit to both servers with different `.env.prod` files.
+```env
+SPRING_PROFILES_ACTIVE=prod
+OTP_MOCK=true              # keep true until SMS is wired; then false
+PAYMENT_MOCK=true          # same — wire real gateway later
+STORAGE_BASE_URL=https://api.worknear.in/files
+CORS_ORIGINS=https://admin.worknear.in
+```
+
+**Do not copy dev `.env.prod` secrets to prod.**
+
+### Android prod flavor
+
+Prod is already wired via flavor-specific `AppConfig.kt`:
+
+- **Dev:** `app/src/dev/.../AppConfig.kt` → dev API URL, HTTP logs on
+- **Prod:** `app/src/prod/.../AppConfig.kt` → prod API URL only, HTTP logs off
+
+Build for store / prod testing:
+
+```bash
+./gradlew assembleProdRelease
+```
+
+Install **`prodRelease`** on a test device — it must **not** talk to the dev server.
+
+Same Git branch — deploy the same commit to both servers with **different** `.env.prod` files.
 
 ---
 
@@ -242,3 +303,47 @@ docker volume inspect backend_pgdata
 | Phone can't reach API | DNS not propagated; test health URL in mobile browser first |
 | Caddy cert error | Domain must point to server IP before HTTPS works |
 | 502 from Caddy | API not running — `curl http://127.0.0.1:8080/actuator/health` on server |
+| **Invalid OTP code** / empty `devCode` | Mock OTP is off. On the **dev** Lightsail instance, SSH in and run the fix in **Part 9** below. After restart, OTP request must return `"devCode":"4821"`. Login: phone `9000000001`, OTP `4821`. |
+
+---
+
+## Part 9 — Enable mock OTP on the dev server
+
+If OTP request returns `"devCode": null`, the API is not in mock mode. Fix it on the server:
+
+```bash
+ssh -i LightsailDefaultKey-ap-south-1.pem ubuntu@65.1.135.244
+cd /opt/worknear/backend
+
+# 1) Ensure mock flags are set
+grep OTP_MOCK .env.prod || echo "OTP_MOCK missing!"
+# If missing or false, edit:
+nano .env.prod
+#   OTP_MOCK=true
+#   SPRING_PROFILES_ACTIVE=dev   # optional; dev profile also enables mock OTP
+
+# 2) Force mock OTP into the running container (works even before git pull)
+cat > docker-compose.override.yml << 'EOF'
+services:
+  api:
+    environment:
+      WORKNEAR_OTP_MOCK: "true"
+      OTP_MOCK: "true"
+EOF
+
+# 3) Recreate API container (no full rebuild needed)
+docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.override.yml --env-file .env.prod up -d --force-recreate api
+
+# 4) Confirm mock mode in logs
+docker compose logs api --tail=20 | grep MOCK
+
+# 5) Test from the server
+curl -s -X POST http://127.0.0.1:8080/api/v1/auth/otp/request \
+  -H "Content-Type: application/json" \
+  -d '{"phone":"+919000000001","role":"CUSTOMER"}'
+# Expect: "devCode":"4821"
+```
+
+After you see `devCode: 4821`, retry login in the Android app (`devDebug` build).
+
+**Later:** `git pull` in `/opt/worknear/backend` picks up repo fixes so `OTP_MOCK=true` in `.env.prod` is enough without the override file.

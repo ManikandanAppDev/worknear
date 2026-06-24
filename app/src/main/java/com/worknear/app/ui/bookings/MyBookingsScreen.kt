@@ -61,7 +61,7 @@ import com.worknear.app.ui.theme.sansProText
 @Composable
 fun MyBookingsScreen(
     modifier: Modifier = Modifier,
-    onChatClick: (String) -> Unit,
+    onBookingClick: (String) -> Unit,
     viewModel: MyBookingsViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     var selectedTab by remember { mutableStateOf(BookingTab.UPCOMING) }
@@ -133,10 +133,10 @@ fun MyBookingsScreen(
                     }
                 }
             }
-            items(bookings, key = { it.id }) { booking ->
+            items(bookings, key = { it.uuid }) { booking ->
                 BookingCard(
                     booking = booking,
-                    onClick = { onChatClick(booking.professionalId) },
+                    onClick = { onBookingClick(booking.uuid) },
                     modifier = Modifier.padding(horizontal = 20.dp)
                 )
             }
@@ -174,32 +174,35 @@ private fun BookingCard(
                 Text(booking.serviceName, fontWeight = FontWeight.Bold, color = DarkText, fontFamily = sansProText)
                 Text(booking.professionalName, fontSize = 13.sp, color = MediumGray, fontFamily = sansProText)
                 Text("${booking.date} • ${booking.time}", fontSize = 12.sp, color = MediumGray, fontFamily = sansProText)
+                if (booking.canReschedule || booking.canCancel) {
+                    Spacer(Modifier.height(4.dp))
+                    Text("Manage ›", fontSize = 13.sp, color = PrimaryBlue, fontWeight = FontWeight.Medium, fontFamily = sansProText)
+                }
             }
-            Text(
-                when (booking.status) {
-                    BookingStatus.CONFIRMED -> stringResource(R.string.confirmed)
-                    BookingStatus.COMPLETED -> stringResource(R.string.completed)
-                    BookingStatus.CANCELLED -> stringResource(R.string.cancelled)
-                },
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        when (booking.status) {
-                            BookingStatus.CONFIRMED -> SuccessGreenLight
-                            BookingStatus.COMPLETED -> SuccessGreenLight
-                            BookingStatus.CANCELLED -> Color(0xFFFEE2E2)
-                        }
-                    )
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                fontSize = 11.sp,
-                color = when (booking.status) {
-                    BookingStatus.CONFIRMED -> SuccessGreen
-                    BookingStatus.COMPLETED -> SuccessGreen
-                    BookingStatus.CANCELLED -> Color(0xFFEF4444)
-                },
-                fontWeight = FontWeight.Medium,
-                fontFamily = sansProText
-            )
+            StatusPill(booking.status)
         }
     }
+}
+
+@Composable
+private fun StatusPill(status: BookingStatus) {
+    val (bg, fg, label) = when (status) {
+        BookingStatus.PENDING -> Triple(com.worknear.app.ui.theme.PromoBackground, PrimaryBlue, "Pending")
+        BookingStatus.CONFIRMED -> Triple(SuccessGreenLight, SuccessGreen, "Confirmed")
+        BookingStatus.ON_THE_WAY -> Triple(com.worknear.app.ui.theme.PromoBackground, PrimaryBlue, "On the way")
+        BookingStatus.IN_PROGRESS -> Triple(com.worknear.app.ui.theme.WarningAmberLight, PrimaryBlue, "In progress")
+        BookingStatus.COMPLETED -> Triple(SuccessGreenLight, SuccessGreen, "Completed")
+        BookingStatus.CANCELLED -> Triple(Color(0xFFFEE2E2), Color(0xFFEF4444), "Cancelled")
+    }
+    Text(
+        label,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(bg)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        fontSize = 11.sp,
+        color = fg,
+        fontWeight = FontWeight.Medium,
+        fontFamily = sansProText
+    )
 }

@@ -1,9 +1,11 @@
 package com.worknear.app.navigation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,12 +21,15 @@ import com.worknear.app.WorkNearApplication
 import com.worknear.app.ui.OnboardingScreen
 import com.worknear.app.ui.booking.BookServiceScreen
 import com.worknear.app.ui.booking.BookingConfirmedScreen
+import com.worknear.app.ui.bookings.BookingDetailScreen
 import com.worknear.app.ui.chat.ChatDetailScreen
 import com.worknear.app.ui.login.LoginScreen
 import com.worknear.app.ui.main.MainScreen
 import com.worknear.app.ui.professional.ProfessionalProfileScreen
+import com.worknear.app.ui.components.OfflineBanner
 import com.worknear.app.ui.servicelist.ServiceListScreen
 import com.worknear.app.ui.theme.PrimaryBlue
+import com.worknear.app.utils.rememberIsOnline
 
 @Composable
 fun WorkNearNavGraph(
@@ -43,10 +48,28 @@ fun WorkNearNavGraph(
         return
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = if (sessionState) Screen.Main.route else Screen.Onboarding.route
-    ) {
+    // If the session is cleared while in-app (e.g. token refresh failed), route back to onboarding.
+    LaunchedEffect(sessionState) {
+        if (!sessionState) {
+            val current = navController.currentDestination?.route
+            if (current != null && current != Screen.Onboarding.route && current != Screen.Login.route) {
+                navController.navigate(Screen.Onboarding.route) {
+                    popUpTo(0) { inclusive = true }
+                }
+            }
+        }
+    }
+
+    val isOnline by rememberIsOnline()
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        OfflineBanner(visible = !isOnline)
+
+        NavHost(
+            modifier = Modifier.weight(1f),
+            navController = navController,
+            startDestination = if (sessionState) Screen.Main.route else Screen.Onboarding.route
+        ) {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(
                 onGetStarted = { navController.navigate(Screen.Login.route) }
@@ -77,6 +100,9 @@ fun WorkNearNavGraph(
                 },
                 onNavigateToChat = { professionalId ->
                     navController.navigate(Screen.ChatDetail.createRoute(professionalId))
+                },
+                onNavigateToBookingDetail = { bookingUuid ->
+                    navController.navigate(Screen.BookingDetail.createRoute(bookingUuid))
                 },
                 onLogout = {
                     navController.navigate(Screen.Onboarding.route) {
@@ -158,6 +184,21 @@ fun WorkNearNavGraph(
                 professionalId = professionalId,
                 onNavigateBack = { navController.popBackStack() }
             )
+        }
+
+        composable(
+            route = Screen.BookingDetail.route,
+            arguments = listOf(navArgument(NavArgs.BOOKING_ID) { type = NavType.StringType })
+        ) { backStackEntry ->
+            val bookingUuid = backStackEntry.arguments?.getString(NavArgs.BOOKING_ID).orEmpty()
+            BookingDetailScreen(
+                bookingUuid = bookingUuid,
+                onNavigateBack = { navController.popBackStack() },
+                onChat = { professionalId ->
+                    navController.navigate(Screen.ChatDetail.createRoute(professionalId))
+                }
+            )
+        }
         }
     }
 }

@@ -21,13 +21,17 @@ services:
     ports: !override
       - "127.0.0.1:8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: prod
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       DB_PASSWORD: ${DB_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
       OTP_MOCK: ${OTP_MOCK:-false}
+      WORKNEAR_OTP_MOCK: ${OTP_MOCK:-false}
       PAYMENT_MOCK: ${PAYMENT_MOCK:-false}
+      WORKNEAR_PAYMENT_MOCK: ${PAYMENT_MOCK:-false}
       STORAGE_MOCK: ${STORAGE_MOCK:-false}
+      WORKNEAR_STORAGE_MOCK: ${STORAGE_MOCK:-false}
       PUSH_MOCK: ${PUSH_MOCK:-false}
+      WORKNEAR_PUSH_MOCK: ${PUSH_MOCK:-false}
       STORAGE_BASE_URL: ${STORAGE_BASE_URL:-https://api.example.com/files}
     restart: unless-stopped

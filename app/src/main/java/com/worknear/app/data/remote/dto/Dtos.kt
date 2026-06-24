@@ -140,6 +140,32 @@ data class CreateBookingBody(
     val paymentMethod: String? = null
 )
 
+data class CancelBookingBody(
+    val reasonCode: String,
+    val comment: String? = null
+)
+
+data class CancelPreviewData(
+    val canCancel: Boolean = false,
+    val feeApplies: Boolean = false,
+    val feeAmount: Double = 0.0,
+    val feeReason: String? = null,
+    val lateCancel: Boolean = false,
+    val hoursUntilSlot: Double = 0.0,
+    val freeLateCancelsUsedThisMonth: Int = 0,
+    val freeLateCancelsLimit: Int = 3,
+    val freeLateCancelsRemaining: Int = 0,
+    val walletBalance: Double = 0.0,
+    val sufficientWalletBalance: Boolean = true,
+    val message: String? = null
+)
+
+data class RescheduleBookingBody(
+    val scheduledDate: String,      // yyyy-MM-dd
+    val slotStart: String,          // HH:mm
+    val slotEnd: String             // HH:mm
+)
+
 data class BookingPhotoDto(
     val id: String? = null,
     val type: String? = null,
@@ -171,7 +197,11 @@ data class BookingDto(
     val confirmedAt: String? = null,
     val completedAt: String? = null,
     val createdAt: String? = null,
-    val photos: List<BookingPhotoDto> = emptyList()
+    val photos: List<BookingPhotoDto> = emptyList(),
+    val rescheduleCount: Int = 0,
+    val rescheduleMax: Int = 2,
+    val canReschedule: Boolean = false,
+    val canCancel: Boolean = false
 )
 
 // ---------- Wallet ----------
