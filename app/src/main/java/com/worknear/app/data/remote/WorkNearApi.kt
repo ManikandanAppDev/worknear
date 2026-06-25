@@ -4,11 +4,13 @@ import com.worknear.app.data.remote.dto.AddressDto
 import com.worknear.app.data.remote.dto.AddressRequestBody
 import com.worknear.app.data.remote.dto.ApiEnvelope
 import com.worknear.app.data.remote.dto.AuthData
+import com.worknear.app.data.remote.dto.BannerDto
 import com.worknear.app.data.remote.dto.BookingDto
 import com.worknear.app.data.remote.dto.CancelBookingBody
 import com.worknear.app.data.remote.dto.CancelPreviewData
 import com.worknear.app.data.remote.dto.CategoryDto
 import com.worknear.app.data.remote.dto.ChangePhoneRequestBody
+import com.worknear.app.data.remote.dto.ChangeRoleBody
 import com.worknear.app.data.remote.dto.ConfirmPhoneChangeBody
 import com.worknear.app.data.remote.dto.CreateBookingBody
 import com.worknear.app.data.remote.dto.RescheduleBookingBody
@@ -17,21 +19,28 @@ import com.worknear.app.data.remote.dto.OtpRequestBody
 import com.worknear.app.data.remote.dto.OtpRequestData
 import com.worknear.app.data.remote.dto.OtpVerifyBody
 import com.worknear.app.data.remote.dto.PageDto
+import com.worknear.app.data.remote.dto.ProDocumentDto
+import com.worknear.app.data.remote.dto.ProProfileDto
 import com.worknear.app.data.remote.dto.ProfessionalDetailDto
 import com.worknear.app.data.remote.dto.ProfessionalSummaryDto
 import com.worknear.app.data.remote.dto.RefreshBody
+import com.worknear.app.data.remote.dto.SetProServicesBody
+import com.worknear.app.data.remote.dto.UpdateProProfileBody
 import com.worknear.app.data.remote.dto.UpdateProfileBody
 import com.worknear.app.data.remote.dto.UserDto
 import com.worknear.app.data.remote.dto.VerifyCompletionOtpBody
 import com.worknear.app.data.remote.dto.WalletDto
 import com.worknear.app.data.remote.dto.WalletTransactionDto
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.PATCH
 import retrofit2.http.POST
 import retrofit2.http.PUT
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -46,6 +55,12 @@ interface WorkNearApi {
 
     @POST("api/v1/auth/refresh")
     suspend fun refresh(@Body body: RefreshBody): Response<ApiEnvelope<AuthData>>
+
+    // ----- Onboarding banners (public) -----
+    @GET("api/v1/banners")
+    suspend fun banners(
+        @Query("audience") audience: String = "ALL"
+    ): Response<ApiEnvelope<List<BannerDto>>>
 
     // ----- Catalog -----
     @GET("api/v1/categories")
@@ -75,6 +90,9 @@ interface WorkNearApi {
 
     @PATCH("api/v1/me")
     suspend fun updateProfile(@Body body: UpdateProfileBody): Response<ApiEnvelope<UserDto>>
+
+    @POST("api/v1/me/role")
+    suspend fun setRole(@Body body: ChangeRoleBody): Response<ApiEnvelope<AuthData>>
 
     @POST("api/v1/me/phone/otp/request")
     suspend fun requestPhoneChangeOtp(@Body body: ChangePhoneRequestBody): Response<ApiEnvelope<OtpRequestData>>
@@ -153,6 +171,26 @@ interface WorkNearApi {
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20
     ): Response<ApiEnvelope<PageDto<BookingDto>>>
+
+    // ----- Professional (self) onboarding -----
+    @GET("api/v1/pro/profile")
+    suspend fun proProfile(): Response<ApiEnvelope<ProProfileDto>>
+
+    @PATCH("api/v1/pro/profile")
+    suspend fun updateProProfile(@Body body: UpdateProProfileBody): Response<ApiEnvelope<ProProfileDto>>
+
+    @PUT("api/v1/pro/services")
+    suspend fun setProServices(@Body body: SetProServicesBody): Response<ApiEnvelope<ProProfileDto>>
+
+    @Multipart
+    @POST("api/v1/pro/documents")
+    suspend fun uploadProDocument(
+        @Query("type") type: String,
+        @Part file: MultipartBody.Part
+    ): Response<ApiEnvelope<ProDocumentDto>>
+
+    @POST("api/v1/pro/submit-verification")
+    suspend fun submitProVerification(): Response<ApiEnvelope<ProProfileDto>>
 
     // ----- Wallet -----
     @GET("api/v1/wallet")

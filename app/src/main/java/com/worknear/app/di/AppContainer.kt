@@ -9,6 +9,7 @@ import com.worknear.app.data.remote.TokenAuthenticator
 import com.worknear.app.data.remote.WorkNearApi
 import com.worknear.app.data.repository.AccountRepository
 import com.worknear.app.data.repository.AuthRepository
+import com.worknear.app.data.repository.BannerRepository
 import com.worknear.app.data.repository.BookingRepository
 import com.worknear.app.data.repository.CatalogRepository
 import com.worknear.app.data.repository.ProfessionalRepository
@@ -68,4 +69,5 @@ class AppContainer(context: Context) {
     val bookingRepository = BookingRepository(api)
     val walletRepository = WalletRepository(api)
     val accountRepository = AccountRepository(api)
+    val bannerRepository = BannerRepository(api)
 }

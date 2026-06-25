@@ -11,6 +11,7 @@ import com.worknear.api.security.UserPrincipal;
 import com.worknear.api.user.domain.User;
 import com.worknear.api.user.dto.AddressRequest;
 import com.worknear.api.user.dto.AddressResponse;
+import com.worknear.api.user.dto.ChangeRoleRequest;
 import com.worknear.api.user.dto.UpdateProfileRequest;
 import com.worknear.api.user.dto.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,6 +50,14 @@ public class UserController {
     public ApiResponse<AuthResponse> verifyPhoneChange(@CurrentUser UserPrincipal user,
                                                        @Valid @RequestBody OtpVerifyRequest request) {
         User updated = userService.changePhone(user.id(), request.phone(), request.code());
+        return ApiResponse.ok(authService.issueTokensForExistingUser(updated));
+    }
+
+    @Operation(summary = "Choose my role during onboarding (CUSTOMER or PROFESSIONAL); re-issues tokens")
+    @PostMapping("/role")
+    public ApiResponse<AuthResponse> setRole(@CurrentUser UserPrincipal user,
+                                             @Valid @RequestBody ChangeRoleRequest request) {
+        User updated = userService.changeRole(user.id(), request.role());
         return ApiResponse.ok(authService.issueTokensForExistingUser(updated));
     }
 

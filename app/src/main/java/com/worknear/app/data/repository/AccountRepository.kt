@@ -40,6 +40,18 @@ class AccountRepository(private val api: WorkNearApi) {
         safeUnit { api.deleteAddress(addressId) }
 
     /**
+     * Whether the signed-in user still needs the post-OTP "Who are you?" role step.
+     * Driven by the backend [UserDto.roleConfirmed] flag so returning test accounts are not
+     * treated as fully onboarded just because they already exist in the database.
+     */
+    suspend fun needsRoleSelection(): Boolean {
+        return when (val me = getMe()) {
+            is ApiResult.Success -> me.data.roleConfirmed != true
+            is ApiResult.Error -> false
+        }
+    }
+
+    /**
      * Whether the signed-in customer still needs the one-time onboarding step
      * (no name yet, or no saved address). On a network error we return false so
      * an existing user is never locked out of the app while offline.
@@ -47,7 +59,11 @@ class AccountRepository(private val api: WorkNearApi) {
     suspend fun needsOnboarding(): Boolean {
         val me = getMe()
         if (me is ApiResult.Error) return false
-        val nameMissing = (me as ApiResult.Success).data.fullName.isNullOrBlank()
+        val user = (me as ApiResult.Success).data
+        // Professionals have their own onboarding (profile + documents) and don't need a
+        // customer address, so the customer onboarding gate never applies to them.
+        if (user.role.equals("PROFESSIONAL", ignoreCase = true)) return false
+        val nameMissing = user.fullName.isNullOrBlank()
         val noAddress = when (val addresses = getAddresses()) {
             is ApiResult.Success -> addresses.data.isEmpty()
             is ApiResult.Error -> false

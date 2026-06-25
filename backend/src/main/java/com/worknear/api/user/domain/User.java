@@ -33,4 +33,8 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
+
+    /** False until the user explicitly picks customer or professional during onboarding. */
+    @Column(name = "role_confirmed", nullable = false)
+    private boolean roleConfirmed = false;
 }

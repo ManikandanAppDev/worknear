@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +37,8 @@ import com.worknear.app.ui.chat.ChatDetailScreen
 import com.worknear.app.ui.login.LoginScreen
 import com.worknear.app.ui.main.MainScreen
 import com.worknear.app.ui.onboarding.CompleteProfileScreen
+import com.worknear.app.ui.onboarding.ProfessionalOnboardingScreen
+import com.worknear.app.ui.onboarding.RoleSelectScreen
 import com.worknear.app.ui.profile.EditProfileScreen
 import com.worknear.app.ui.professional.ProfessionalProfileScreen
 import com.worknear.app.ui.search.SearchScreen
@@ -52,6 +55,7 @@ import com.worknear.app.ui.serviceflow.ScheduleBookingScreen
 import com.worknear.app.ui.serviceflow.ServiceBuilderScreen
 import com.worknear.app.ui.theme.PrimaryBlue
 import com.worknear.app.utils.rememberIsOnline
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
 private const val PROFILE_GATE_TIMEOUT_MS = 4000L
@@ -62,7 +66,9 @@ fun WorkNearNavGraph(
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as WorkNearApplication
+    val scope = rememberCoroutineScope()
     val loggedIn by app.container.tokenStore.isLoggedIn.collectAsStateWithLifecycle(initialValue = null)
+    val pendingRole by app.container.tokenStore.pendingRoleSelection.collectAsStateWithLifecycle(initialValue = false)
 
     val sessionState = loggedIn
 
@@ -75,28 +81,55 @@ fun WorkNearNavGraph(
     // Guards against a stale needsOnboarding() result overwriting a just-completed profile.
     var profileJustCompleted by remember { mutableStateOf(false) }
 
+    // Resolved once per app launch so cold-start routing is correct (role → address → home).
+    var entryRoute by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(sessionState) {
         when (sessionState) {
             null -> return@LaunchedEffect
-            true -> {
-                // Bound the splash: if the server is slow/unreachable we proceed to the app
-                // instead of hanging on the spinner. The redirect effect still catches an
-                // incomplete profile once a later check succeeds.
-                val result = withTimeoutOrNull(PROFILE_GATE_TIMEOUT_MS) {
-                    app.container.accountRepository.needsOnboarding()
-                }
-                if (result != null && !profileJustCompleted) needsProfile = result
-            }
             false -> {
                 profileJustCompleted = false
                 needsProfile = false
+                entryRoute = Screen.Onboarding.route
+                startResolved = true
+            }
+            true -> {
+                val awaitingRole = app.container.tokenStore.isPendingRoleSelection() ||
+                    (withTimeoutOrNull(PROFILE_GATE_TIMEOUT_MS) {
+                        app.container.accountRepository.needsRoleSelection()
+                    } ?: false)
+                if (awaitingRole) {
+                    needsProfile = false
+                    entryRoute = Screen.RoleSelect.route
+                } else if (!profileJustCompleted) {
+                    val needs = withTimeoutOrNull(PROFILE_GATE_TIMEOUT_MS) {
+                        app.container.accountRepository.needsOnboarding()
+                    } ?: false
+                    needsProfile = needs
+                    entryRoute = if (needs) Screen.CompleteProfile.route else Screen.Main.route
+                } else {
+                    entryRoute = Screen.Main.route
+                }
+                startResolved = true
             }
         }
-        startResolved = true
     }
 
-    // Hold a splash until we know the session state and, for logged-in users, the entry point.
-    if (sessionState == null || !startResolved) {
+    // Keep in-session redirect in sync when role selection finishes mid-session.
+    LaunchedEffect(pendingRole, sessionState) {
+        if (sessionState == true && !pendingRole && !profileJustCompleted &&
+            entryRoute == Screen.RoleSelect.route
+        ) {
+            val needs = withTimeoutOrNull(PROFILE_GATE_TIMEOUT_MS) {
+                app.container.accountRepository.needsOnboarding()
+            } ?: false
+            needsProfile = needs
+            entryRoute = if (needs) Screen.CompleteProfile.route else Screen.Main.route
+        }
+    }
+
+    // Hold a splash until session + the correct entry screen are resolved.
+    if (sessionState == null || !startResolved || entryRoute == null) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = PrimaryBlue)
         }
@@ -115,10 +148,15 @@ fun WorkNearNavGraph(
         }
     }
 
-    // Catch logged-in-but-incomplete users who land on Main (e.g. existing account with no address).
-    LaunchedEffect(needsProfile, sessionState) {
-        if (sessionState == true && needsProfile && !profileJustCompleted &&
-            navController.currentDestination?.route == Screen.Main.route
+    // Catch logged-in-but-incomplete customers who land on Main — never interrupt role selection.
+    LaunchedEffect(needsProfile, sessionState, pendingRole) {
+        val current = navController.currentDestination?.route
+        val onPostLoginFlow = current == Screen.RoleSelect.route ||
+            current == Screen.ProfessionalOnboarding.route ||
+            current == Screen.CompleteProfile.route ||
+            current == Screen.Login.route
+        if (sessionState == true && needsProfile && !profileJustCompleted && !pendingRole && !onPostLoginFlow &&
+            current == Screen.Main.route
         ) {
             navController.navigate(Screen.CompleteProfile.route) {
                 popUpTo(Screen.Main.route) { inclusive = true }
@@ -134,11 +172,7 @@ fun WorkNearNavGraph(
         NavHost(
             modifier = Modifier.weight(1f),
             navController = navController,
-            startDestination = when {
-                sessionState != true -> Screen.Onboarding.route
-                needsProfile -> Screen.CompleteProfile.route
-                else -> Screen.Main.route
-            },
+            startDestination = entryRoute ?: Screen.Onboarding.route,
             // App-wide push/pop transitions: new screens slide in from the right with a fade,
             // the previous screen parallaxes out to the left (and vice-versa on back).
             enterTransition = {
@@ -163,10 +197,51 @@ fun WorkNearNavGraph(
         composable(Screen.Login.route) {
             LoginScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onLoginSuccess = { newUser ->
-                    val destination = if (newUser) Screen.CompleteProfile.route else Screen.Main.route
-                    navController.navigate(destination) {
-                        popUpTo(Screen.Onboarding.route) { inclusive = true }
+                onLoginSuccess = { _, _ ->
+                    scope.launch {
+                        val awaitingRole = app.container.tokenStore.isPendingRoleSelection() ||
+                            app.container.accountRepository.needsRoleSelection()
+                        val destination = when {
+                            awaitingRole -> Screen.RoleSelect.route
+                            app.container.accountRepository.needsOnboarding() -> Screen.CompleteProfile.route
+                            else -> Screen.Main.route
+                        }
+                        navController.navigate(destination) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.RoleSelect.route) {
+            RoleSelectScreen(
+                onCustomer = {
+                    scope.launch {
+                        app.container.tokenStore.clearPendingRoleSelection()
+                        navController.navigate(Screen.CompleteProfile.route) {
+                            popUpTo(Screen.RoleSelect.route) { inclusive = true }
+                        }
+                    }
+                },
+                onProfessional = {
+                    scope.launch {
+                        app.container.tokenStore.clearPendingRoleSelection()
+                        navController.navigate(Screen.ProfessionalOnboarding.route) {
+                            popUpTo(Screen.RoleSelect.route) { inclusive = true }
+                        }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.ProfessionalOnboarding.route) {
+            ProfessionalOnboardingScreen(
+                onCompleted = {
+                    profileJustCompleted = true
+                    needsProfile = false
+                    navController.navigate(Screen.Main.route) {
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
@@ -177,6 +252,7 @@ fun WorkNearNavGraph(
                 onCompleted = {
                     profileJustCompleted = true
                     needsProfile = false
+                    entryRoute = Screen.Main.route
                     navController.navigate(Screen.Main.route) {
                         popUpTo(0) { inclusive = true }
                     }

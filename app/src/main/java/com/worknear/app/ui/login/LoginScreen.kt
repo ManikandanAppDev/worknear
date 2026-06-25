@@ -40,7 +40,7 @@ import com.worknear.app.utils.WorkNearButtonType
 @Composable
 fun LoginScreen(
     onNavigateBack: () -> Unit,
-    onLoginSuccess: (newUser: Boolean) -> Unit,
+    onLoginSuccess: (newUser: Boolean, role: String?) -> Unit,
     viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
@@ -118,7 +118,7 @@ private fun LoginContent(
             WorkNearTextField(
                 value = uiState.phone,
                 onValueChange = onPhoneChange,
-                placeholder = "Mobile number",
+                placeholder = "10-digit mobile number",
                 leadingIcon = Icons.Default.Phone,
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                     keyboardType = KeyboardType.Phone

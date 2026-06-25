@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.repository.AuthRepository
+import com.worknear.app.utils.filterMobileInput
+import com.worknear.app.utils.normalizeIndianMobile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +32,7 @@ class LoginViewModel(
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun onPhoneChange(value: String) {
-        _uiState.update { it.copy(phone = value, errorMessage = null) }
+        _uiState.update { it.copy(phone = filterMobileInput(value), errorMessage = null) }
     }
 
     fun onOtpChange(value: String) {
@@ -42,9 +44,9 @@ class LoginViewModel(
     }
 
     fun requestOtp() {
-        val phone = normalizePhone(_uiState.value.phone)
+        val phone = normalizeIndianMobile(_uiState.value.phone)
         if (phone == null) {
-            _uiState.update { it.copy(errorMessage = "Enter a valid mobile number") }
+            _uiState.update { it.copy(errorMessage = "Enter a valid 10-digit mobile number") }
             return
         }
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
@@ -64,9 +66,12 @@ class LoginViewModel(
         }
     }
 
-    /** [onSuccess] receives `true` when a brand-new account was just created. */
-    fun verifyOtp(onSuccess: (newUser: Boolean) -> Unit) {
-        val phone = normalizePhone(_uiState.value.phone) ?: return
+    /**
+     * [onSuccess] receives `newUser = true` when a brand-new account was just created (so the caller
+     * can show the "Who are you?" role step), along with the account's current role.
+     */
+    fun verifyOtp(onSuccess: (newUser: Boolean, role: String?) -> Unit) {
+        val phone = normalizeIndianMobile(_uiState.value.phone) ?: return
         val code = _uiState.value.otp
         if (code.length < 4) {
             _uiState.update { it.copy(errorMessage = "Enter the OTP sent to your phone") }
@@ -77,22 +82,12 @@ class LoginViewModel(
             when (val result = authRepository.verifyOtp(phone, code)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isLoading = false) }
-                    onSuccess(result.data)
+                    onSuccess(result.data.newUser, result.data.role)
                 }
                 is ApiResult.Error -> _uiState.update {
                     it.copy(isLoading = false, errorMessage = result.message)
                 }
             }
-        }
-    }
-
-    /** Normalizes to E.164. Accepts "+9190..." as-is, or a bare 10-digit Indian number. */
-    private fun normalizePhone(raw: String): String? {
-        val trimmed = raw.trim().replace(" ", "")
-        return when {
-            trimmed.matches(Regex("\\+[1-9]\\d{7,14}")) -> trimmed
-            trimmed.matches(Regex("[6-9]\\d{9}")) -> "+91$trimmed"
-            else -> null
         }
     }
 }

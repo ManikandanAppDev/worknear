@@ -6,6 +6,8 @@ import com.worknear.app.data.local.TokenStore
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.remote.dto.UpdateProfileBody
 import com.worknear.app.data.repository.AccountRepository
+import com.worknear.app.utils.filterMobileInput
+import com.worknear.app.utils.normalizeIndianMobile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -128,7 +130,7 @@ class EditProfileViewModel(
     }
 
     fun onNewPhoneChange(value: String) {
-        _uiState.update { it.copy(newPhone = value, phoneError = null) }
+        _uiState.update { it.copy(newPhone = filterMobileInput(value), phoneError = null) }
     }
 
     fun onOtpChange(value: String) {
@@ -136,9 +138,9 @@ class EditProfileViewModel(
     }
 
     fun requestPhoneOtp() {
-        val phone = normalizePhone(_uiState.value.newPhone)
+        val phone = normalizeIndianMobile(_uiState.value.newPhone)
         if (phone == null) {
-            _uiState.update { it.copy(phoneError = "Enter a valid mobile number") }
+            _uiState.update { it.copy(phoneError = "Enter a valid 10-digit mobile number") }
             return
         }
         _uiState.update { it.copy(phoneSubmitting = true, phoneError = null) }
@@ -159,7 +161,7 @@ class EditProfileViewModel(
     }
 
     fun confirmPhoneChange() {
-        val phone = normalizePhone(_uiState.value.newPhone) ?: return
+        val phone = normalizeIndianMobile(_uiState.value.newPhone) ?: return
         val code = _uiState.value.otpCode
         if (code.length < 4) {
             _uiState.update { it.copy(phoneError = "Enter the OTP sent to your phone") }
@@ -189,16 +191,6 @@ class EditProfileViewModel(
                     it.copy(phoneSubmitting = false, phoneError = result.message)
                 }
             }
-        }
-    }
-
-    /** Normalizes to E.164. Accepts "+9190..." as-is, or a bare 10-digit Indian number. */
-    private fun normalizePhone(raw: String): String? {
-        val trimmed = raw.trim().replace(" ", "")
-        return when {
-            trimmed.matches(Regex("\\+[1-9]\\d{7,14}")) -> trimmed
-            trimmed.matches(Regex("[6-9]\\d{9}")) -> "+91$trimmed"
-            else -> null
         }
     }
 }

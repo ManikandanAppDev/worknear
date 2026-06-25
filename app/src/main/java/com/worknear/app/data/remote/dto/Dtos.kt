@@ -39,7 +39,8 @@ data class UserDto(
     val fullName: String? = null,
     val email: String? = null,
     val avatarUrl: String? = null,
-    val status: String? = null
+    val status: String? = null,
+    val roleConfirmed: Boolean = false
 )
 
 data class UpdateProfileBody(
@@ -57,6 +58,23 @@ data class ConfirmPhoneChangeBody(
     val code: String
 )
 
+data class ChangeRoleBody(
+    val role: String
+)
+
+// ---------- Onboarding banners ----------
+
+data class BannerDto(
+    val id: String? = null,
+    val title: String? = null,
+    val subtitle: String? = null,
+    val imageUrl: String? = null,
+    val ctaLabel: String? = null,
+    val audience: String? = null,
+    val sortOrder: Int = 0,
+    val active: Boolean = true
+)
+
 // ---------- Catalog ----------
 
 data class CategoryDto(
@@ -64,7 +82,8 @@ data class CategoryDto(
     val slug: String? = null,
     val name: String? = null,
     val icon: String? = null,
-    val color: String? = null
+    val color: String? = null,
+    val basePrice: Double = 0.0
 )
 
 // ---------- Professionals ----------
@@ -268,4 +287,50 @@ data class AddressRequestBody(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val makeDefault: Boolean = false
+)
+
+// ---------- Professional (self) onboarding ----------
+
+data class UpdateProProfileBody(
+    val bio: String? = null,
+    val experienceYears: Int? = null,
+    val serviceRadiusKm: Int? = null,
+    val city: String? = null,
+    val area: String? = null,
+    val languages: String? = null
+)
+
+data class SetProServicesBody(
+    val services: List<ProServiceItemBody>
+)
+
+data class ProServiceItemBody(
+    val categoryId: String,
+    val basePrice: Double
+)
+
+data class ProDocumentDto(
+    val id: String? = null,
+    val type: String? = null,
+    val fileUrl: String? = null,
+    val originalName: String? = null,
+    val status: String? = null,
+    val reviewNote: String? = null
+)
+
+data class ProProfileDto(
+    val userId: String? = null,
+    val profileId: String? = null,
+    val name: String? = null,
+    val avatarUrl: String? = null,
+    val bio: String? = null,
+    val experienceYears: Int = 0,
+    val serviceRadiusKm: Int = 0,
+    val city: String? = null,
+    val area: String? = null,
+    val languages: String? = null,
+    val verificationStatus: String? = null,
+    val jobsCompleted: Int = 0,
+    val services: List<ProfessionalServiceDto> = emptyList(),
+    val documents: List<ProDocumentDto> = emptyList()
 )

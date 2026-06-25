@@ -13,10 +13,11 @@ public record UserResponse(
         String fullName,
         String email,
         String avatarUrl,
-        UserStatus status
+        UserStatus status,
+        boolean roleConfirmed
 ) {
     public static UserResponse from(User u) {
         return new UserResponse(u.getId(), u.getPhone(), u.getRole(), u.getFullName(),
-                u.getEmail(), u.getAvatarUrl(), u.getStatus());
+                u.getEmail(), u.getAvatarUrl(), u.getStatus(), u.isRoleConfirmed());
     }
 }

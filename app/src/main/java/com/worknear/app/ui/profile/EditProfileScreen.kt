@@ -264,7 +264,7 @@ private fun ChangePhoneSheet(uiState: EditProfileUiState, viewModel: EditProfile
                     onValueChange = viewModel::onNewPhoneChange,
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text("e.g. 9876543210", color = MediumGray, fontFamily = sansProText) },
+                    placeholder = { Text("10-digit mobile number", color = MediumGray, fontFamily = sansProText) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     shape = RoundedCornerShape(14.dp),
                     colors = fieldColors()

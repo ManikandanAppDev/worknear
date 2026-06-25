@@ -10,7 +10,9 @@ object NavArgs {
 sealed class Screen(val route: String) {
     object Onboarding : Screen("onboarding")
     object Login : Screen("login")
+    object RoleSelect : Screen("role_select")
     object CompleteProfile : Screen("complete_profile")
+    object ProfessionalOnboarding : Screen("professional_onboarding")
     object Main : Screen("main")
     object Search : Screen("search")
     object EditProfile : Screen("edit_profile")

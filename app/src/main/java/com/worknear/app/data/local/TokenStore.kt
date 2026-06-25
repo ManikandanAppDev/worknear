@@ -1,6 +1,7 @@
 package com.worknear.app.data.local
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -25,6 +26,7 @@ class TokenStore(private val context: Context) {
     private val userPhoneKey = stringPreferencesKey("user_phone")
     private val userRoleKey = stringPreferencesKey("user_role")
     private val userAvatarKey = stringPreferencesKey("user_avatar")
+    private val pendingRoleKey = booleanPreferencesKey("pending_role_selection")
 
     private val cachedAccess = AtomicReference<String?>(null)
     private val cachedRefresh = AtomicReference<String?>(null)
@@ -47,6 +49,22 @@ class TokenStore(private val context: Context) {
     }
 
     val isLoggedIn: Flow<Boolean> = context.dataStore.data.map { !it[accessKey].isNullOrBlank() }
+
+    /** True while a brand-new account still needs the post-OTP "Who are you?" step. */
+    val pendingRoleSelection: Flow<Boolean> =
+        context.dataStore.data.map { it[pendingRoleKey] == true }
+
+    suspend fun setPendingRoleSelection(pending: Boolean) {
+        context.dataStore.edit { prefs ->
+            if (pending) prefs[pendingRoleKey] = true else prefs.remove(pendingRoleKey)
+        }
+        return
+    }
+
+    suspend fun clearPendingRoleSelection() = setPendingRoleSelection(false)
+
+    suspend fun isPendingRoleSelection(): Boolean =
+        context.dataStore.data.first()[pendingRoleKey] == true
 
     /** Loads persisted tokens into memory; call once on app start. */
     suspend fun warmCache() {
@@ -78,6 +96,7 @@ class TokenStore(private val context: Context) {
             userPhone?.let { prefs[userPhoneKey] = it }
             userRole?.let { prefs[userRoleKey] = it }
         }
+        return
     }
 
     suspend fun updateTokens(accessToken: String, refreshToken: String) {
@@ -87,6 +106,7 @@ class TokenStore(private val context: Context) {
             prefs[accessKey] = accessToken
             prefs[refreshKey] = refreshToken
         }
+        return
     }
 
     suspend fun cachedUserName(): String? = context.dataStore.data.first()[userNameKey]
@@ -96,6 +116,7 @@ class TokenStore(private val context: Context) {
 
     suspend fun saveAvatar(uri: String) {
         context.dataStore.edit { it[userAvatarKey] = uri }
+        return
     }
 
     /** Updates locally cached profile fields (used after editing name / changing phone). */
@@ -104,11 +125,13 @@ class TokenStore(private val context: Context) {
             name?.let { prefs[userNameKey] = it }
             phone?.let { prefs[userPhoneKey] = it }
         }
+        return
     }
 
     suspend fun clear() {
         cachedAccess.set(null)
         cachedRefresh.set(null)
         context.dataStore.edit { it.clear() }
+        return
     }
 }

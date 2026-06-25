@@ -13,6 +13,9 @@ import com.worknear.app.ui.home.HomeViewModel
 import com.worknear.app.ui.login.LoginViewModel
 import com.worknear.app.ui.main.MainViewModel
 import com.worknear.app.ui.onboarding.CompleteProfileViewModel
+import com.worknear.app.ui.onboarding.OnboardingViewModel
+import com.worknear.app.ui.onboarding.ProfessionalOnboardingViewModel
+import com.worknear.app.ui.onboarding.RoleSelectViewModel
 import com.worknear.app.ui.professional.ProfessionalProfileViewModel
 import com.worknear.app.ui.projobs.ProfessionalJobsViewModel
 import com.worknear.app.ui.profile.EditProfileViewModel
@@ -26,6 +29,18 @@ object AppViewModelProvider {
 
     val Factory = viewModelFactory {
         initializer { LoginViewModel(container().authRepository) }
+
+        initializer { OnboardingViewModel(container().bannerRepository) }
+
+        initializer { RoleSelectViewModel(container().authRepository) }
+
+        initializer {
+            ProfessionalOnboardingViewModel(
+                container().professionalRepository,
+                container().accountRepository,
+                container().catalogRepository
+            )
+        }
 
         initializer { CompleteProfileViewModel(container().accountRepository) }
 
@@ -71,7 +86,12 @@ object AppViewModelProvider {
 
         initializer { MyBookingsViewModel(container().bookingRepository) }
 
-        initializer { ProfessionalJobsViewModel(container().bookingRepository) }
+        initializer {
+            ProfessionalJobsViewModel(
+                container().bookingRepository,
+                container().professionalRepository
+            )
+        }
 
         initializer { WalletViewModel(container().walletRepository) }
 

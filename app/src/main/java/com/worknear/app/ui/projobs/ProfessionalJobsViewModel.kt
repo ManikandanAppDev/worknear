@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.worknear.app.data.model.Booking
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.repository.BookingRepository
+import com.worknear.app.data.repository.ProfessionalRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,18 +19,29 @@ data class ProfessionalJobsUiState(
     val otp: String = "",
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
-    val successMessage: String? = null
+    val successMessage: String? = null,
+    /** UNSUBMITTED / PENDING / MORE_INFO / APPROVED / REJECTED — gates whether the pro can get jobs. */
+    val verificationStatus: String? = null
 )
 
 class ProfessionalJobsViewModel(
-    private val bookingRepository: BookingRepository
+    private val bookingRepository: BookingRepository,
+    private val professionalRepository: ProfessionalRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfessionalJobsUiState())
     val uiState: StateFlow<ProfessionalJobsUiState> = _uiState.asStateFlow()
 
     init {
+        loadVerificationStatus()
         loadJobs()
+    }
+
+    private fun loadVerificationStatus() {
+        viewModelScope.launch {
+            val status = (professionalRepository.getMyProfile() as? ApiResult.Success)?.data?.verificationStatus
+            if (status != null) _uiState.update { it.copy(verificationStatus = status) }
+        }
     }
 
     fun loadJobs() {

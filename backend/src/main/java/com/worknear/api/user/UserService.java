@@ -5,7 +5,10 @@ import com.worknear.api.auth.dto.OtpRequestResponse;
 import com.worknear.api.common.exception.BadRequestException;
 import com.worknear.api.common.exception.ConflictException;
 import com.worknear.api.common.exception.NotFoundException;
+import com.worknear.api.professional.ProfessionalProfileRepository;
+import com.worknear.api.professional.domain.ProfessionalProfile;
 import com.worknear.api.user.domain.CustomerAddress;
+import com.worknear.api.user.domain.Role;
 import com.worknear.api.user.domain.User;
 import com.worknear.api.user.dto.AddressRequest;
 import com.worknear.api.user.dto.AddressResponse;
@@ -29,6 +32,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final CustomerAddressRepository addressRepository;
     private final OtpService otpService;
+    private final ProfessionalProfileRepository professionalProfileRepository;
 
     @Transactional(readOnly = true)
     public UserResponse getMe(UUID userId) {
@@ -79,6 +83,28 @@ public class UserService {
         }
         otpService.verify(newPhone, code);
         user.setPhone(newPhone);
+        return user;
+    }
+
+    /**
+     * Sets the user's role during onboarding. New accounts default to CUSTOMER at OTP-verify;
+     * choosing "I provide a service" upgrades them to PROFESSIONAL and provisions an empty
+     * professional profile. Returns the updated user so the caller can re-issue tokens (the JWT
+     * embeds the role).
+     */
+    @Transactional
+    public User changeRole(UUID userId, Role role) {
+        if (role == null || role == Role.ADMIN) {
+            throw new BadRequestException("INVALID_ROLE", "Role must be CUSTOMER or PROFESSIONAL.");
+        }
+        User user = getUser(userId);
+        user.setRole(role);
+        user.setRoleConfirmed(true);
+        if (role == Role.PROFESSIONAL && professionalProfileRepository.findByUserId(userId).isEmpty()) {
+            ProfessionalProfile profile = new ProfessionalProfile();
+            profile.setUserId(userId);
+            professionalProfileRepository.save(profile);
+        }
         return user;
     }
 

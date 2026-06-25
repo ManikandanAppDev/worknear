@@ -91,6 +91,18 @@ fun ProfessionalJobsScreen(
         }
         Spacer(Modifier.height(16.dp))
 
+        val status = state.verificationStatus
+        if (status != null && !status.equals("APPROVED", ignoreCase = true)) {
+            val (message, type) = when (status.uppercase()) {
+                "PENDING" -> "Your profile is under review. We'll notify you once you're approved to receive jobs." to WorkNearAlertType.INFO
+                "MORE_INFO" -> "We need more information to verify your profile. Please update your documents." to WorkNearAlertType.WARNING
+                "REJECTED" -> "Your verification was not approved. Please contact support." to WorkNearAlertType.ERROR
+                else -> "Finish setting up your profile to start receiving jobs." to WorkNearAlertType.INFO
+            }
+            WorkNearAlert(message = message, type = type)
+            Spacer(Modifier.height(12.dp))
+        }
+
         when {
             state.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(color = PrimaryBlue)
