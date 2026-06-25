@@ -2,6 +2,8 @@ package com.worknear.app.ui.main
 
 import android.app.Activity
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -60,6 +62,8 @@ fun MainScreen(
     onNavigateToServiceList: (String) -> Unit,
     onNavigateToServiceBuilder: (String) -> Unit,
     onNavigateToAllServices: () -> Unit,
+    onNavigateToSearch: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {},
     onNavigateToAddAddress: () -> Unit = {},
     onNavigateToManageAddresses: () -> Unit = {},
     onNavigateToProfessional: (String) -> Unit,
@@ -115,7 +119,8 @@ fun MainScreen(
             )
         }
     ) { padding ->
-        when (selectedTab) {
+        Crossfade(targetState = selectedTab, animationSpec = tween(250), label = "tab") { tab ->
+        when (tab) {
             MainTab.HOME -> HomeTabContent(
                 modifier = Modifier.padding(padding),
                 onServiceTileClick = { categoryId ->
@@ -124,6 +129,7 @@ fun MainScreen(
                 },
                 onSeeAllServices = onNavigateToAllServices,
                 onRecentBookingClick = { selectedTab = MainTab.BOOKINGS },
+                onSearchClick = onNavigateToSearch,
                 onNavigateToAddAddress = onNavigateToAddAddress,
                 onNavigateToManageAddresses = onNavigateToManageAddresses
             )
@@ -134,8 +140,11 @@ fun MainScreen(
             MainTab.WALLET -> WalletScreen(modifier = Modifier.padding(padding))
             MainTab.PROFILE -> UserProfileScreen(
                 modifier = Modifier.padding(padding),
-                onLogout = onLogout
+                onLogout = onLogout,
+                onEditProfile = onNavigateToEditProfile,
+                onManageAddresses = onNavigateToManageAddresses
             )
+        }
         }
     }
 }

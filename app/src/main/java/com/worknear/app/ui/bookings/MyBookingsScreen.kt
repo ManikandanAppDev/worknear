@@ -58,6 +58,7 @@ import com.worknear.app.ui.theme.SuccessGreen
 import com.worknear.app.ui.theme.SuccessGreenLight
 import com.worknear.app.ui.theme.sansProText
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyBookingsScreen(
     modifier: Modifier = Modifier,
@@ -103,6 +104,12 @@ fun MyBookingsScreen(
                         selectedLabelColor = Color.White,
                         containerColor = CardColor,
                         labelColor = DarkText
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selectedTab == tab,
+                        borderColor = PrimaryBlue.copy(alpha = 0.35f),
+                        selectedBorderColor = PrimaryBlue
                     )
                 )
             }

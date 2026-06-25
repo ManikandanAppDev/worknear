@@ -1,8 +1,14 @@
 package com.worknear.api.user;
 
+import com.worknear.api.auth.AuthService;
+import com.worknear.api.auth.dto.AuthResponse;
+import com.worknear.api.auth.dto.OtpRequest;
+import com.worknear.api.auth.dto.OtpRequestResponse;
+import com.worknear.api.auth.dto.OtpVerifyRequest;
 import com.worknear.api.common.web.ApiResponse;
 import com.worknear.api.security.CurrentUser;
 import com.worknear.api.security.UserPrincipal;
+import com.worknear.api.user.domain.User;
 import com.worknear.api.user.dto.AddressRequest;
 import com.worknear.api.user.dto.AddressResponse;
 import com.worknear.api.user.dto.UpdateProfileRequest;
@@ -23,11 +29,27 @@ import java.util.UUID;
 public class UserController {
 
     private final UserService userService;
+    private final AuthService authService;
 
     @Operation(summary = "Get my account")
     @GetMapping
     public ApiResponse<UserResponse> me(@CurrentUser UserPrincipal user) {
         return ApiResponse.ok(userService.getMe(user.id()));
+    }
+
+    @Operation(summary = "Request an OTP to change my phone number")
+    @PostMapping("/phone/otp/request")
+    public ApiResponse<OtpRequestResponse> requestPhoneChangeOtp(@CurrentUser UserPrincipal user,
+                                                                 @Valid @RequestBody OtpRequest request) {
+        return ApiResponse.ok(userService.requestPhoneChangeOtp(user.id(), request.phone()));
+    }
+
+    @Operation(summary = "Verify OTP and change my phone number (re-issues tokens)")
+    @PostMapping("/phone/verify")
+    public ApiResponse<AuthResponse> verifyPhoneChange(@CurrentUser UserPrincipal user,
+                                                       @Valid @RequestBody OtpVerifyRequest request) {
+        User updated = userService.changePhone(user.id(), request.phone(), request.code());
+        return ApiResponse.ok(authService.issueTokensForExistingUser(updated));
     }
 
     @Operation(summary = "Update my profile")

@@ -24,6 +24,7 @@ class TokenStore(private val context: Context) {
     private val userNameKey = stringPreferencesKey("user_name")
     private val userPhoneKey = stringPreferencesKey("user_phone")
     private val userRoleKey = stringPreferencesKey("user_role")
+    private val userAvatarKey = stringPreferencesKey("user_avatar")
 
     private val cachedAccess = AtomicReference<String?>(null)
     private val cachedRefresh = AtomicReference<String?>(null)
@@ -89,6 +90,21 @@ class TokenStore(private val context: Context) {
     }
 
     suspend fun cachedUserName(): String? = context.dataStore.data.first()[userNameKey]
+
+    /** Locally stored avatar (a file:// URI). Backend has no avatar upload, so this is device-local. */
+    suspend fun cachedAvatar(): String? = context.dataStore.data.first()[userAvatarKey]
+
+    suspend fun saveAvatar(uri: String) {
+        context.dataStore.edit { it[userAvatarKey] = uri }
+    }
+
+    /** Updates locally cached profile fields (used after editing name / changing phone). */
+    suspend fun updateProfileLocal(name: String? = null, phone: String? = null) {
+        context.dataStore.edit { prefs ->
+            name?.let { prefs[userNameKey] = it }
+            phone?.let { prefs[userPhoneKey] = it }
+        }
+    }
 
     suspend fun clear() {
         cachedAccess.set(null)

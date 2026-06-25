@@ -63,7 +63,8 @@ private data class DateOption(
     val day: String,
     val date: String,
     val month: String,
-    val full: String
+    val full: String,
+    val iso: String
 )
 
 private fun upcomingDates(count: Int): List<DateOption> {
@@ -75,12 +76,20 @@ private fun upcomingDates(count: Int): List<DateOption> {
         val date = cal.get(Calendar.DAY_OF_MONTH).toString()
         val month = months[cal.get(Calendar.MONTH)]
         val year = cal.get(Calendar.YEAR)
+        val iso = String.format(
+            java.util.Locale.US,
+            "%04d-%02d-%02d",
+            year,
+            cal.get(Calendar.MONTH) + 1,
+            cal.get(Calendar.DAY_OF_MONTH)
+        )
         val option = DateOption(
             id = "${cal.get(Calendar.MONTH)}-$date",
             day = day,
             date = date,
             month = month,
-            full = "$day, $date $month $year"
+            full = "$day, $date $month $year",
+            iso = iso
         )
         cal.add(Calendar.DAY_OF_MONTH, 1)
         option
@@ -261,7 +270,9 @@ fun ScheduleBookingScreen(
             enabled = canContinue,
             buttonText = "Continue"
         ) {
-            ServiceFlowState.scheduledDate = dates.firstOrNull { it.id == selectedDateId }?.full
+            val chosen = dates.firstOrNull { it.id == selectedDateId }
+            ServiceFlowState.scheduledDate = chosen?.full
+            ServiceFlowState.scheduledIsoDate = chosen?.iso
             ServiceFlowState.scheduledTime = selectedTime
             ServiceFlowState.notes = notes
             selectedAddress?.let { ServiceFlowState.address = it.display }

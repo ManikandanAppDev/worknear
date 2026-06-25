@@ -17,9 +17,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.worknear.app.di.AppViewModelProvider
+import com.worknear.app.ui.theme.ErrorRed
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,10 +49,12 @@ import com.worknear.app.ui.theme.sansProText
 @Composable
 fun ConfirmBookingScreen(
     onNavigateBack: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    viewModel: BookingFlowViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val pro = ServiceFlowState.selectedPro
     val amount = ServiceFlowState.lockAmount
+    val state by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -103,6 +111,16 @@ fun ConfirmBookingScreen(
         }
 
         Column(modifier = Modifier.fillMaxWidth().background(CardColor).padding(20.dp)) {
+            state.submitError?.let { error ->
+                Text(
+                    error,
+                    fontSize = 12.sp,
+                    color = ErrorRed,
+                    fontFamily = sansProText,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp)
+                )
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(
                     modifier = Modifier
@@ -110,16 +128,22 @@ fun ConfirmBookingScreen(
                         .height(48.dp)
                         .clip(RoundedCornerShape(50))
                         .border(1.5.dp, PrimaryBlue, RoundedCornerShape(50))
-                        .clickable(onClick = onNavigateBack),
+                        .clickable(enabled = !state.submitting, onClick = onNavigateBack),
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Back", color = PrimaryBlue, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, fontFamily = sansProText)
                 }
-                PrimaryPillButton(
-                    text = "Confirm Booking",
-                    modifier = Modifier.weight(1f),
-                    onClick = onConfirm
-                )
+                if (state.submitting) {
+                    Box(modifier = Modifier.weight(1f).height(48.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = PrimaryBlue, modifier = Modifier.size(24.dp))
+                    }
+                } else {
+                    PrimaryPillButton(
+                        text = "Confirm Booking",
+                        modifier = Modifier.weight(1f),
+                        onClick = { viewModel.confirmBooking { onConfirm() } }
+                    )
+                }
             }
             Spacer(Modifier.height(10.dp))
             Text(

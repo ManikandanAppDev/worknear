@@ -1,6 +1,9 @@
 package com.worknear.api.user;
 
+import com.worknear.api.auth.OtpService;
+import com.worknear.api.auth.dto.OtpRequestResponse;
 import com.worknear.api.common.exception.BadRequestException;
+import com.worknear.api.common.exception.ConflictException;
 import com.worknear.api.common.exception.NotFoundException;
 import com.worknear.api.user.domain.CustomerAddress;
 import com.worknear.api.user.domain.User;
@@ -25,6 +28,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final CustomerAddressRepository addressRepository;
+    private final OtpService otpService;
 
     @Transactional(readOnly = true)
     public UserResponse getMe(UUID userId) {
@@ -44,6 +48,38 @@ public class UserService {
             user.setAvatarUrl(request.avatarUrl());
         }
         return UserResponse.from(user);
+    }
+
+    /**
+     * Sends an OTP to the requested new phone number after verifying it isn't already taken.
+     * The OTP is keyed by phone in Redis (same mechanism as login).
+     */
+    @Transactional(readOnly = true)
+    public OtpRequestResponse requestPhoneChangeOtp(UUID userId, String newPhone) {
+        User user = getUser(userId);
+        if (newPhone.equals(user.getPhone())) {
+            throw new BadRequestException("PHONE_UNCHANGED", "This is already your current number.");
+        }
+        if (userRepository.existsByPhone(newPhone)) {
+            throw new ConflictException("This phone number is already linked to another account.");
+        }
+        String devCode = otpService.request(newPhone);
+        return new OtpRequestResponse(newPhone, true, devCode);
+    }
+
+    /**
+     * Verifies the OTP for the new phone, then updates the user's phone. Returns the updated user
+     * so the caller can re-issue tokens (the JWT embeds the phone).
+     */
+    @Transactional
+    public User changePhone(UUID userId, String newPhone, String code) {
+        User user = getUser(userId);
+        if (!newPhone.equals(user.getPhone()) && userRepository.existsByPhone(newPhone)) {
+            throw new ConflictException("This phone number is already linked to another account.");
+        }
+        otpService.verify(newPhone, code);
+        user.setPhone(newPhone);
+        return user;
     }
 
     @Transactional(readOnly = true)

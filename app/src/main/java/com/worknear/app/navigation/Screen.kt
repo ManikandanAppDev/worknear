@@ -12,6 +12,8 @@ sealed class Screen(val route: String) {
     object Login : Screen("login")
     object CompleteProfile : Screen("complete_profile")
     object Main : Screen("main")
+    object Search : Screen("search")
+    object EditProfile : Screen("edit_profile")
     object ServiceList : Screen("service_list/{${NavArgs.CATEGORY_ID}}") {
         fun createRoute(categoryId: String) = "service_list/$categoryId"
     }

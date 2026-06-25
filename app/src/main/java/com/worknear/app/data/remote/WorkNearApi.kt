@@ -8,6 +8,8 @@ import com.worknear.app.data.remote.dto.BookingDto
 import com.worknear.app.data.remote.dto.CancelBookingBody
 import com.worknear.app.data.remote.dto.CancelPreviewData
 import com.worknear.app.data.remote.dto.CategoryDto
+import com.worknear.app.data.remote.dto.ChangePhoneRequestBody
+import com.worknear.app.data.remote.dto.ConfirmPhoneChangeBody
 import com.worknear.app.data.remote.dto.CreateBookingBody
 import com.worknear.app.data.remote.dto.RescheduleBookingBody
 import com.worknear.app.data.remote.dto.OfferDto
@@ -73,6 +75,12 @@ interface WorkNearApi {
 
     @PATCH("api/v1/me")
     suspend fun updateProfile(@Body body: UpdateProfileBody): Response<ApiEnvelope<UserDto>>
+
+    @POST("api/v1/me/phone/otp/request")
+    suspend fun requestPhoneChangeOtp(@Body body: ChangePhoneRequestBody): Response<ApiEnvelope<OtpRequestData>>
+
+    @POST("api/v1/me/phone/verify")
+    suspend fun confirmPhoneChange(@Body body: ConfirmPhoneChangeBody): Response<ApiEnvelope<AuthData>>
 
     @GET("api/v1/me/addresses")
     suspend fun addresses(): Response<ApiEnvelope<List<AddressDto>>>

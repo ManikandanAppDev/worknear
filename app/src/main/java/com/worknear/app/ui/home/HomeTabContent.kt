@@ -21,7 +21,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
@@ -75,6 +74,7 @@ fun HomeTabContent(
     onServiceTileClick: (String) -> Unit,
     onSeeAllServices: () -> Unit,
     onRecentBookingClick: () -> Unit,
+    onSearchClick: () -> Unit = {},
     onNavigateToAddAddress: () -> Unit = {},
     onNavigateToManageAddresses: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
@@ -131,15 +131,22 @@ fun HomeTabContent(
             Spacer(Modifier.height(14.dp))
         }
 
-        item { HomeSearchBar(modifier = Modifier.padding(horizontal = 20.dp)) }
+        item { HomeSearchBar(onClick = onSearchClick, modifier = Modifier.padding(horizontal = 20.dp)) }
 
         item {
             Spacer(Modifier.height(24.dp))
             SectionHeader(title = "Popular Services", onSeeAll = onSeeAllServices)
             Spacer(Modifier.height(16.dp))
+            val categoryTiles = if (uiState.categories.isNotEmpty()) {
+                uiState.categories.take(7)
+                    .map { HomeServiceTile(it.id, it.title, ServiceCatalog.iconFor(it.id)) } +
+                    HomeServiceTile("more", "More", R.drawable.ic_wn_more)
+            } else {
+                ServiceCatalog.homeTiles
+            }
             PopularServicesGrid(
-                tiles = ServiceCatalog.homeTiles,
-                onTileClick = onServiceTileClick,
+                tiles = categoryTiles,
+                onTileClick = { id -> if (id == "more") onSeeAllServices() else onServiceTileClick(id) },
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
         }
@@ -224,7 +231,7 @@ private fun HomeTopBar(address: String, onAddressClick: () -> Unit) {
 }
 
 @Composable
-private fun HomeSearchBar(modifier: Modifier = Modifier) {
+private fun HomeSearchBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -232,6 +239,7 @@ private fun HomeSearchBar(modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(16.dp))
             .background(CardColor)
             .border(1.dp, BorderGray, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
             .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -244,7 +252,6 @@ private fun HomeSearchBar(modifier: Modifier = Modifier) {
             fontFamily = sansProText,
             modifier = Modifier.weight(1f)
         )
-        Icon(Icons.Default.KeyboardVoice, null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
     }
 }
 

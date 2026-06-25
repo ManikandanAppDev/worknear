@@ -1,5 +1,10 @@
 package com.worknear.app.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,7 +36,9 @@ import com.worknear.app.ui.chat.ChatDetailScreen
 import com.worknear.app.ui.login.LoginScreen
 import com.worknear.app.ui.main.MainScreen
 import com.worknear.app.ui.onboarding.CompleteProfileScreen
+import com.worknear.app.ui.profile.EditProfileScreen
 import com.worknear.app.ui.professional.ProfessionalProfileScreen
+import com.worknear.app.ui.search.SearchScreen
 import com.worknear.app.ui.components.OfflineBanner
 import com.worknear.app.ui.servicelist.ServiceListScreen
 import com.worknear.app.ui.serviceflow.AllServicesScreen
@@ -131,6 +138,20 @@ fun WorkNearNavGraph(
                 sessionState != true -> Screen.Onboarding.route
                 needsProfile -> Screen.CompleteProfile.route
                 else -> Screen.Main.route
+            },
+            // App-wide push/pop transitions: new screens slide in from the right with a fade,
+            // the previous screen parallaxes out to the left (and vice-versa on back).
+            enterTransition = {
+                slideInHorizontally(animationSpec = tween(320)) { it } + fadeIn(animationSpec = tween(320))
+            },
+            exitTransition = {
+                slideOutHorizontally(animationSpec = tween(320)) { -it / 3 } + fadeOut(animationSpec = tween(320))
+            },
+            popEnterTransition = {
+                slideInHorizontally(animationSpec = tween(320)) { -it / 3 } + fadeIn(animationSpec = tween(320))
+            },
+            popExitTransition = {
+                slideOutHorizontally(animationSpec = tween(320)) { it } + fadeOut(animationSpec = tween(320))
             }
         ) {
         composable(Screen.Onboarding.route) {
@@ -173,6 +194,12 @@ fun WorkNearNavGraph(
                 },
                 onNavigateToAllServices = {
                     navController.navigate(Screen.AllServices.route)
+                },
+                onNavigateToSearch = {
+                    navController.navigate(Screen.Search.route)
+                },
+                onNavigateToEditProfile = {
+                    navController.navigate(Screen.EditProfile.route)
                 },
                 onNavigateToAddAddress = {
                     navController.navigate(Screen.AddAddress.createRoute())
@@ -238,6 +265,21 @@ fun WorkNearNavGraph(
             )
         }
 
+        composable(Screen.Search.route) {
+            SearchScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onOpenService = { categoryId ->
+                    navController.navigate(Screen.ServiceBuilder.createRoute(categoryId))
+                }
+            )
+        }
+
+        composable(Screen.EditProfile.route) {
+            EditProfileScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         composable(Screen.ManageAddresses.route) {
             ManageAddressesScreen(
                 onNavigateBack = { navController.popBackStack() },
@@ -294,6 +336,7 @@ fun WorkNearNavGraph(
         composable(Screen.BookingSuccess.route) {
             BookingSuccessScreen(
                 onBackToHome = {
+                    com.worknear.app.ui.serviceflow.ServiceFlowState.reset()
                     navController.navigate(Screen.Main.route) {
                         popUpTo(Screen.Main.route) { inclusive = true }
                     }

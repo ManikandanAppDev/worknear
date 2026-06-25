@@ -25,13 +25,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worknear.app.ui.theme.DarkText
+import com.worknear.app.ui.theme.ErrorRed
 import com.worknear.app.ui.theme.PrimaryBlue
 import com.worknear.app.ui.theme.PurpleGrey40
 import com.worknear.app.ui.theme.sansProText
 
 enum class WorkNearButtonType {
     FILLED,
-    OUTLINED
+    OUTLINED,
+
+    /** Outlined button styled in red for destructive actions (e.g. Cancel booking). */
+    DANGER
 }
 
 @Composable
@@ -94,6 +98,30 @@ fun WorkNearButton(
                     loading = loading,
                     icon = icon,
                     textColor = DarkText.copy(alpha = 0.75f)
+                )
+            }
+        }
+
+        WorkNearButtonType.DANGER -> {
+
+            OutlinedButton(
+                onClick = onClick,
+                enabled = enabled && !loading,
+                modifier = modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = shape,
+                border = BorderStroke(
+                    width = 1.5.dp,
+                    color = ErrorRed.copy(alpha = 0.7f)
+                )
+            ) {
+
+                ButtonContent(
+                    text = text,
+                    loading = loading,
+                    icon = icon,
+                    textColor = ErrorRed
                 )
             }
         }

@@ -1,0 +1,29 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- sparkle: "clean" cue -->
+    <path
+        android:fillColor="#3D6BFF"
+        android:pathData="M20,1.2l0.7,1.6 1.6,0.7 -1.6,0.7 -0.7,1.6 -0.7,-1.6 -1.6,-0.7 1.6,-0.7z" />
+    <!-- lid knob -->
+    <path
+        android:fillColor="#3D6BFF"
+        android:pathData="M8,4.8h3v2h-3z" />
+    <!-- lid -->
+    <path
+        android:fillColor="#3D6BFF"
+        android:pathData="M4,6.8h11a0.9,0.9 0 0 1 0,1.8h-11a0.9,0.9 0 0 1 0,-1.8z" />
+    <!-- pot body -->
+    <path
+        android:fillColor="#3D6BFF"
+        android:pathData="M3.5,9.6h12v5.4a3.5,3.5 0 0 1 -3.5,3.5h-5a3.5,3.5 0 0 1 -3.5,-3.5z" />
+    <!-- handles -->
+    <path
+        android:fillColor="#3D6BFF"
+        android:pathData="M1.8,11h1.7v2.2h-1.7z" />
+    <path
+        android:fillColor="#3D6BFF"
+        android:pathData="M15.5,11h1.7v2.2h-1.7z" />
+</vector>

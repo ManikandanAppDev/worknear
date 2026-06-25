@@ -4,6 +4,10 @@ import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.remote.WorkNearApi
 import com.worknear.app.data.remote.dto.AddressDto
 import com.worknear.app.data.remote.dto.AddressRequestBody
+import com.worknear.app.data.remote.dto.AuthData
+import com.worknear.app.data.remote.dto.ChangePhoneRequestBody
+import com.worknear.app.data.remote.dto.ConfirmPhoneChangeBody
+import com.worknear.app.data.remote.dto.OtpRequestData
 import com.worknear.app.data.remote.dto.UpdateProfileBody
 import com.worknear.app.data.remote.dto.UserDto
 import com.worknear.app.data.remote.safeCall
@@ -15,6 +19,14 @@ class AccountRepository(private val api: WorkNearApi) {
 
     suspend fun updateProfile(body: UpdateProfileBody): ApiResult<UserDto> =
         safeCall { api.updateProfile(body) }
+
+    /** Sends an OTP to [phone] to begin a phone-number change. */
+    suspend fun requestPhoneChangeOtp(phone: String): ApiResult<OtpRequestData> =
+        safeCall { api.requestPhoneChangeOtp(ChangePhoneRequestBody(phone)) }
+
+    /** Confirms the phone change; on success returns fresh tokens for the updated account. */
+    suspend fun confirmPhoneChange(phone: String, code: String): ApiResult<AuthData> =
+        safeCall { api.confirmPhoneChange(ConfirmPhoneChangeBody(phone, code)) }
 
     suspend fun getAddresses(): ApiResult<List<AddressDto>> = safeCall { api.addresses() }
 

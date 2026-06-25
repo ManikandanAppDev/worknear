@@ -48,7 +48,41 @@ object ServiceCatalog {
 
     fun titleFor(categoryId: String): String =
         homeTiles.firstOrNull { it.categoryId == categoryId }?.label
-            ?: categoryId.replaceFirstChar { it.uppercase() }
+            ?: prettifySlug(categoryId)
+
+    /** Turns a backend slug like "painting-water-proofing" into "Painting Water Proofing". */
+    fun prettifySlug(slug: String): String =
+        slug.split('-', '_')
+            .filter { it.isNotBlank() }
+            .joinToString(" ") { it.replaceFirstChar { c -> c.uppercase() } }
+
+    /** Maps a backend category slug to a local icon, with a sensible fallback. */
+    fun iconFor(slug: String): Int = when (slug) {
+        "ac" -> R.drawable.ic_wn_ac
+        "bathroom-cleaning" -> R.drawable.ic_wn_bathroom
+        "carpenter" -> R.drawable.ic_wn_carpenter
+        "chimney" -> R.drawable.ic_wn_appliance
+        "electrician" -> R.drawable.ic_wn_electrician
+        "fan-installation" -> R.drawable.ic_wn_fan
+        "festival-lights-installation" -> R.drawable.ic_wn_bulb
+        "full-home-cleaning" -> R.drawable.ic_wn_cleaning
+        "furniture-assembly" -> R.drawable.ic_wn_furniture
+        "geyser", "geyser-service-repair" -> R.drawable.ic_wn_geyser
+        "kitchen-cleaning" -> R.drawable.ic_wn_kitchen_clean
+        "laptop" -> R.drawable.ic_wn_laptop
+        "living-bedroom-cleaning" -> R.drawable.ic_wn_bed
+        "microwave" -> R.drawable.ic_wn_microwave
+        "painting-water-proofing", "painting" -> R.drawable.ic_wn_painting
+        "plumber" -> R.drawable.ic_wn_plumber
+        "refrigerator" -> R.drawable.ic_wn_fridge
+        "ro-water-purifier" -> R.drawable.ic_wn_purifier
+        "stove" -> R.drawable.ic_wn_stove
+        "television" -> R.drawable.ic_wn_tv
+        "washing-machine" -> R.drawable.ic_wn_washing_machine
+        "cleaning" -> R.drawable.ic_wn_cleaning
+        "appliance" -> R.drawable.ic_wn_appliance
+        else -> R.drawable.ic_wn_gear
+    }
 
     fun chipsFor(categoryId: String): List<ServiceChip> = when (categoryId) {
         "electrician" -> chips("Popular", "Fan", "Light", "Switch", "Wiring")
@@ -64,15 +98,32 @@ object ServiceCatalog {
     private fun chips(vararg labels: String): List<ServiceChip> =
         labels.map { ServiceChip(it.lowercase(), it) }
 
-    /** Returns the bookable service list for a category. */
+    /** Returns the bookable service list for a backend category slug. */
     fun servicesFor(categoryId: String): List<CatalogService> = when (categoryId) {
         "electrician" -> electricalServices
-        "cleaning" -> cleaningServices
-        "ac" -> acServices
+        "fan-installation" -> fanInstallServices
+        "festival-lights-installation" -> festivalLightsServices
         "plumber" -> plumberServices
-        "painting" -> paintingServices
-        "appliance" -> applianceServices
+        "geyser", "geyser-service-repair" -> geyserServices
+        "ac" -> acServices
+        "painting-water-proofing", "painting" -> paintingServices
         "carpenter" -> carpenterServices
+        "furniture-assembly" -> furnitureAssemblyServices
+        "bathroom-cleaning" -> bathroomCleaningServices
+        "kitchen-cleaning" -> kitchenCleaningServices
+        "living-bedroom-cleaning" -> livingCleaningServices
+        "full-home-cleaning" -> fullHomeCleaningServices
+        "washing-machine" -> washingMachineServices
+        "refrigerator" -> refrigeratorServices
+        "television" -> televisionServices
+        "chimney" -> chimneyServices
+        "microwave" -> microwaveServices
+        "stove" -> stoveServices
+        "laptop" -> laptopServices
+        "ro-water-purifier" -> roServices
+        // legacy app slugs (kept for backward compatibility)
+        "cleaning" -> cleaningServices
+        "appliance" -> applianceServices
         else -> generalServices
     }
 
@@ -181,5 +232,117 @@ object ServiceCatalog {
         CatalogService("deep_clean", "Home deep clean", "Full home sanitize", 1799, R.drawable.ic_wn_cleaning, priceFrom = true),
         CatalogService("appliance_install", "Appliance install", "Mount & setup", 499, R.drawable.ic_wn_appliance),
         CatalogService("electrical_check", "Electrical check", "Safety inspection", 149, R.drawable.ic_wn_guarantee)
+    )
+
+    private val fanInstallServices = listOf(
+        CatalogService("ceiling_fan", "Ceiling fan", "Install / replace", 249, R.drawable.ic_wn_fan),
+        CatalogService("exhaust_fan", "Exhaust fan", "Kitchen / bathroom", 299, R.drawable.ic_wn_fan),
+        CatalogService("wall_fan", "Wall fan", "Mount & wire", 199, R.drawable.ic_wn_fan),
+        CatalogService("fan_repair", "Fan repair", "Noise / not running", 199, R.drawable.ic_wn_tools, priceFrom = true)
+    )
+
+    private val festivalLightsServices = listOf(
+        CatalogService("diwali_lights", "Diwali lights", "Decorative lighting", 599, R.drawable.ic_wn_bulb, priceFrom = true),
+        CatalogService("event_lights", "Event / wedding", "Full setup", 1499, R.drawable.ic_wn_bulb, priceFrom = true),
+        CatalogService("string_lights", "String / serial lights", "Balcony & windows", 399, R.drawable.ic_wn_bulb, priceFrom = true),
+        CatalogService("lights_removal", "Removal & pack", "Take-down service", 299, R.drawable.ic_wn_tools)
+    )
+
+    private val geyserServices = listOf(
+        CatalogService("geyser_install", "Installation", "Wall-mount fit", 499, R.drawable.ic_wn_geyser),
+        CatalogService("geyser_no_heat", "Not heating", "Element / thermostat", 299, R.drawable.ic_wn_tools, priceFrom = true),
+        CatalogService("geyser_leak", "Leakage fix", "Tank / pipe leak", 249, R.drawable.ic_wn_pipe, priceFrom = true),
+        CatalogService("geyser_service", "General service", "Descale & check", 349, R.drawable.ic_wn_gear)
+    )
+
+    private val furnitureAssemblyServices = listOf(
+        CatalogService("bed_assembly", "Bed / cot", "Assemble & fix", 499, R.drawable.ic_wn_bed, priceFrom = true),
+        CatalogService("wardrobe_assembly", "Wardrobe", "Modular fit", 699, R.drawable.ic_wn_drawer, priceFrom = true),
+        CatalogService("table_chair", "Table & chairs", "Assemble set", 349, R.drawable.ic_wn_furniture, priceFrom = true),
+        CatalogService("rack_shelf", "Rack / shelf", "Wall-mount fit", 299, R.drawable.ic_wn_shelf)
+    )
+
+    private val bathroomCleaningServices = listOf(
+        CatalogService("bath_deep", "Bathroom deep clean", "Descale & sanitize", 399, R.drawable.ic_wn_bathroom),
+        CatalogService("bath_tiles", "Tiles & floor", "Stain removal", 349, R.drawable.ic_wn_sparkle, priceFrom = true),
+        CatalogService("bath_fittings", "Basin & fittings", "Taps & mirror", 249, R.drawable.ic_wn_washbasin),
+        CatalogService("bath_toilet", "Toilet / WC", "Deep sanitize", 299, R.drawable.ic_wn_toilet)
+    )
+
+    private val kitchenCleaningServices = listOf(
+        CatalogService("kitchen_deep", "Kitchen deep clean", "Degrease & sanitize", 449, R.drawable.ic_wn_kitchen),
+        CatalogService("kitchen_cabinets", "Cabinets & shelves", "Inside-out wipe", 349, R.drawable.ic_wn_cabinet, priceFrom = true),
+        CatalogService("kitchen_sink", "Sink & counter", "Scrub & polish", 249, R.drawable.ic_wn_washbasin),
+        CatalogService("kitchen_surfaces", "Surfaces & hob", "Grease removal", 299, R.drawable.ic_wn_sparkle, priceFrom = true)
+    )
+
+    private val livingCleaningServices = listOf(
+        CatalogService("living_dusting", "Dusting & wipe", "Surfaces & decor", 299, R.drawable.ic_wn_sparkle, priceFrom = true),
+        CatalogService("living_floor", "Floor mopping", "Sweep & mop", 249, R.drawable.ic_wn_cleaning),
+        CatalogService("living_sofa", "Sofa shampoo", "Per seat", 199, R.drawable.ic_wn_sofa, priceFrom = true),
+        CatalogService("bedroom_full", "Full room clean", "Top-to-bottom", 399, R.drawable.ic_wn_bed, priceFrom = true)
+    )
+
+    private val fullHomeCleaningServices = listOf(
+        CatalogService("home_1bhk", "1 BHK", "Full home clean", 1499, R.drawable.ic_wn_home, priceFrom = true),
+        CatalogService("home_2bhk", "2 BHK", "Full home clean", 1999, R.drawable.ic_wn_home, priceFrom = true),
+        CatalogService("home_3bhk", "3 BHK", "Full home clean", 2499, R.drawable.ic_wn_home, priceFrom = true),
+        CatalogService("home_villa", "Villa / 4+ BHK", "Full home clean", 3499, R.drawable.ic_wn_home, priceFrom = true)
+    )
+
+    private val washingMachineServices = listOf(
+        CatalogService("wm_repair", "Repair", "Diagnose & fix", 299, R.drawable.ic_wn_tools, priceFrom = true),
+        CatalogService("wm_install", "Installation", "Setup & test", 399, R.drawable.ic_wn_washing_machine),
+        CatalogService("wm_drum_clean", "Drum cleaning", "Descale & sanitize", 349, R.drawable.ic_wn_sparkle),
+        CatalogService("wm_not_spin", "Not spinning", "Motor / belt", 349, R.drawable.ic_wn_gear, priceFrom = true)
+    )
+
+    private val refrigeratorServices = listOf(
+        CatalogService("fridge_repair", "Repair", "Diagnose & fix", 299, R.drawable.ic_wn_tools, priceFrom = true),
+        CatalogService("fridge_gas", "Gas refill", "Coolant top-up", 1499, R.drawable.ic_wn_canister, priceFrom = true),
+        CatalogService("fridge_not_cool", "Not cooling", "Compressor check", 399, R.drawable.ic_wn_snow, priceFrom = true),
+        CatalogService("fridge_service", "General service", "Clean & check", 349, R.drawable.ic_wn_fridge)
+    )
+
+    private val televisionServices = listOf(
+        CatalogService("tv_repair", "Repair", "Display / sound", 399, R.drawable.ic_wn_tools, priceFrom = true),
+        CatalogService("tv_wall_mount", "Wall mounting", "Bracket & fit", 499, R.drawable.ic_wn_wall),
+        CatalogService("tv_no_display", "No display", "Panel / backlight", 599, R.drawable.ic_wn_tv, priceFrom = true),
+        CatalogService("tv_setup", "Setup & install", "Apps & tuning", 299, R.drawable.ic_wn_gear)
+    )
+
+    private val chimneyServices = listOf(
+        CatalogService("chimney_service", "Service & clean", "Degrease filters", 499, R.drawable.ic_wn_sparkle),
+        CatalogService("chimney_install", "Installation", "Mount & duct", 799, R.drawable.ic_wn_appliance, priceFrom = true),
+        CatalogService("chimney_repair", "Repair", "Motor / suction", 399, R.drawable.ic_wn_tools, priceFrom = true),
+        CatalogService("chimney_auto", "Auto-clean service", "Full service", 599, R.drawable.ic_wn_gear)
+    )
+
+    private val microwaveServices = listOf(
+        CatalogService("mw_repair", "Repair", "Diagnose & fix", 299, R.drawable.ic_wn_tools, priceFrom = true),
+        CatalogService("mw_not_heat", "Not heating", "Magnetron check", 399, R.drawable.ic_wn_gear, priceFrom = true),
+        CatalogService("mw_install", "Installation", "Setup & test", 249, R.drawable.ic_wn_microwave),
+        CatalogService("mw_service", "General service", "Clean & check", 299, R.drawable.ic_wn_sparkle)
+    )
+
+    private val stoveServices = listOf(
+        CatalogService("stove_burner", "Burner repair", "Flame / ignition", 249, R.drawable.ic_wn_tools, priceFrom = true),
+        CatalogService("stove_gas_leak", "Gas leak fix", "Seal & test", 299, R.drawable.ic_wn_pipe),
+        CatalogService("stove_install", "Installation", "Fit & test", 349, R.drawable.ic_wn_stove),
+        CatalogService("stove_service", "General service", "Clean & tune", 249, R.drawable.ic_wn_gear)
+    )
+
+    private val laptopServices = listOf(
+        CatalogService("laptop_repair", "Repair", "Diagnose & fix", 399, R.drawable.ic_wn_tools, priceFrom = true),
+        CatalogService("laptop_screen", "Screen replace", "Panel fit", 1499, R.drawable.ic_wn_laptop, priceFrom = true),
+        CatalogService("laptop_battery", "Battery / charging", "Replace & test", 999, R.drawable.ic_wn_mcb, priceFrom = true),
+        CatalogService("laptop_software", "Software / OS", "Reinstall & tune", 499, R.drawable.ic_wn_gear, priceFrom = true)
+    )
+
+    private val roServices = listOf(
+        CatalogService("ro_service", "General service", "Clean & check", 349, R.drawable.ic_wn_purifier),
+        CatalogService("ro_filter", "Filter change", "Cartridge replace", 599, R.drawable.ic_wn_canister, priceFrom = true),
+        CatalogService("ro_install", "Installation", "Mount & connect", 499, R.drawable.ic_wn_tools),
+        CatalogService("ro_repair", "Repair", "Leak / no water", 349, R.drawable.ic_wn_gear, priceFrom = true)
     )
 }

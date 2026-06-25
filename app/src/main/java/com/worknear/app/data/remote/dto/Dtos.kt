@@ -48,6 +48,15 @@ data class UpdateProfileBody(
     val avatarUrl: String? = null
 )
 
+data class ChangePhoneRequestBody(
+    val phone: String
+)
+
+data class ConfirmPhoneChangeBody(
+    val phone: String,
+    val code: String
+)
+
 // ---------- Catalog ----------
 
 data class CategoryDto(

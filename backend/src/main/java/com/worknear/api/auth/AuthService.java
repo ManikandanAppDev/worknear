@@ -106,4 +106,12 @@ public class AuthService {
         return new AuthResponse(access, refresh, "Bearer", jwtService.accessTokenTtlSeconds(),
                 newUser, UserResponse.from(user));
     }
+
+    /**
+     * Re-issues tokens for an existing user. Used after a profile-side change that invalidates
+     * the current token claims (e.g. a phone-number change embeds the new phone in the JWT).
+     */
+    public AuthResponse issueTokensForExistingUser(User user) {
+        return issueTokens(user, false);
+    }
 }

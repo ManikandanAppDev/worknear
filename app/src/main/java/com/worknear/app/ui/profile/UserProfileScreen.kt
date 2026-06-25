@@ -19,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.worknear.app.R
 import com.worknear.app.data.model.ProfileMenuItem
 import com.worknear.app.data.model.UserData
@@ -59,6 +59,8 @@ import com.worknear.app.utils.WorkNearButtonType
 fun UserProfileScreen(
     modifier: Modifier = Modifier,
     onLogout: () -> Unit = {},
+    onEditProfile: () -> Unit = {},
+    onManageAddresses: () -> Unit = {},
     viewModel: ProfileViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val profile = UserData.profile
@@ -77,9 +79,6 @@ fun UserProfileScreen(
                 horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End
             ) {
                 IconButton(onClick = {}) {
-                    Icon(Icons.Default.Settings, "Settings", tint = DarkText)
-                }
-                IconButton(onClick = {}) {
                     Icon(Icons.Default.Notifications, "Notifications", tint = DarkText)
                 }
             }
@@ -90,12 +89,22 @@ fun UserProfileScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Image(
-                    painter = painterResource(profile.imageRes),
-                    contentDescription = profile.name,
-                    modifier = Modifier.size(90.dp).clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
+                val avatar = uiState.avatarUrl
+                if (!avatar.isNullOrBlank()) {
+                    AsyncImage(
+                        model = avatar,
+                        contentDescription = uiState.name,
+                        modifier = Modifier.size(90.dp).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Image(
+                        painter = painterResource(profile.imageRes),
+                        contentDescription = profile.name,
+                        modifier = Modifier.size(90.dp).clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(
                     uiState.name.ifBlank { profile.name },
@@ -117,7 +126,7 @@ fun UserProfileScreen(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = sansProText,
-                    modifier = Modifier.clickable {}
+                    modifier = Modifier.clickable(onClick = onEditProfile)
                 )
             }
         }
@@ -127,6 +136,7 @@ fun UserProfileScreen(
         items(UserData.menuItems, key = { it.id }) { item ->
             ProfileMenuRow(
                 item = item,
+                onClick = { if (item.id == "addresses") onManageAddresses() },
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
             )
         }
@@ -145,9 +155,9 @@ fun UserProfileScreen(
 }
 
 @Composable
-private fun ProfileMenuRow(item: ProfileMenuItem, modifier: Modifier = Modifier) {
+private fun ProfileMenuRow(item: ProfileMenuItem, onClick: () -> Unit = {}, modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier.fillMaxWidth().clickable {},
+        modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = CardColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)

@@ -21,9 +21,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import com.worknear.app.data.model.Professional
+import com.worknear.app.di.AppViewModelProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,10 +56,14 @@ import com.worknear.app.ui.theme.sansProText
 @Composable
 fun BestMatchesScreen(
     onNavigateBack: () -> Unit,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
+    viewModel: BookingFlowViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val selectedId = ServiceFlowState.selectedProId
     val lockAmount = ServiceFlowState.lockAmount
+    val state by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(Unit) { viewModel.loadMatches() }
 
     Column(
         modifier = Modifier
@@ -77,14 +88,38 @@ fun BestMatchesScreen(
             }
         }
 
-        LazyColumn(modifier = Modifier.weight(1f), contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)) {
-            items(MatchData.professionals, key = { it.id }) { pro ->
-                ProMatchCard(
-                    pro = pro,
-                    selected = pro.id == selectedId,
-                    onSelect = { ServiceFlowState.selectedProId = pro.id },
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            when {
+                state.loadingMatches -> CircularProgressIndicator(color = PrimaryBlue, modifier = Modifier.size(32.dp))
+                state.matchError != null -> MatchesMessage(
+                    title = "Couldn't load professionals",
+                    subtitle = state.matchError ?: "Please try again.",
+                    actionText = "Retry",
+                    onAction = { viewModel.loadMatches(force = true) }
                 )
+                state.matches.isEmpty() -> MatchesMessage(
+                    title = "No professionals available",
+                    subtitle = "We couldn't find pros for this service right now. Please try again later.",
+                    actionText = "Retry",
+                    onAction = { viewModel.loadMatches(force = true) }
+                )
+                else -> LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp)
+                ) {
+                    items(state.matches, key = { it.id }) { pro ->
+                        val match = pro.toMatch()
+                        ProMatchCard(
+                            pro = match,
+                            selected = pro.id == selectedId,
+                            onSelect = {
+                                ServiceFlowState.selectedProId = pro.id
+                                ServiceFlowState.selectedMatch = match
+                            },
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                        )
+                    }
+                }
             }
         }
 
@@ -93,6 +128,30 @@ fun BestMatchesScreen(
             enabled = selectedId != null,
             onContinue = onContinue
         )
+    }
+}
+
+private fun Professional.toMatch(): MatchProfessional = MatchProfessional(
+    id = id,
+    name = name.ifBlank { "Professional" },
+    skills = profession,
+    experience = if (experienceYears > 0) "$experienceYears+ years experience" else "Verified pro",
+    rating = if (rating > 0.0) rating else 4.8,
+    onTimePercent = 95,
+    startsAt = startingPrice
+)
+
+@Composable
+private fun MatchesMessage(title: String, subtitle: String, actionText: String, onAction: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(40.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(title, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkText, fontFamily = sansProText, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        Text(subtitle, fontSize = 13.sp, color = MediumGray, fontFamily = sansProText, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(16.dp))
+        PrimaryPillButton(text = actionText, onClick = onAction)
     }
 }
 

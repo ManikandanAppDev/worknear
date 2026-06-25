@@ -5,8 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -148,7 +146,7 @@ fun BookingDetailScreen(
                     if (booking.canCancel) {
                         WorkNearButton(
                             text = "Cancel booking",
-                            buttonType = WorkNearButtonType.OUTLINED,
+                            buttonType = WorkNearButtonType.DANGER,
                             onClick = viewModel::openCancelSheet,
                             loading = uiState.isSubmitting && uiState.activeSheet == BookingDetailSheet.NONE
                         )
@@ -614,7 +612,18 @@ private fun CancelConfirmSheet(state: BookingDetailUiState, viewModel: BookingDe
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+/** Lays out items in fixed-size rows (a stable replacement for FlowRow). */
+@Composable
+private fun <T> ChipWrap(items: List<T>, perRow: Int, content: @Composable (T) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items.chunked(perRow).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                row.forEach { content(it) }
+            }
+        }
+    }
+}
+
 @Composable
 private fun RescheduleSheet(state: BookingDetailUiState, viewModel: BookingDetailViewModel) {
     Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
@@ -622,34 +631,30 @@ private fun RescheduleSheet(state: BookingDetailUiState, viewModel: BookingDetai
         Spacer(Modifier.height(8.dp))
         Text("Choose a new date", fontSize = 14.sp, color = MediumGray, fontFamily = sansProText)
         Spacer(Modifier.height(8.dp))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            state.availableDates.forEach { (iso, label) ->
-                FilterChip(
-                    selected = state.selectedDate == iso,
-                    onClick = { viewModel.selectDate(iso) },
-                    label = { Text(label, fontFamily = sansProText) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = PrimaryBlue,
-                        selectedLabelColor = Color.White
-                    )
+        ChipWrap(items = state.availableDates, perRow = 3) { (iso, label) ->
+            FilterChip(
+                selected = state.selectedDate == iso,
+                onClick = { viewModel.selectDate(iso) },
+                label = { Text(label, fontFamily = sansProText) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = PrimaryBlue,
+                    selectedLabelColor = Color.White
                 )
-            }
+            )
         }
         Spacer(Modifier.height(16.dp))
         Text("Choose time slot", fontSize = 14.sp, color = MediumGray, fontFamily = sansProText)
         Spacer(Modifier.height(8.dp))
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            state.availableSlots.forEach { slot ->
-                FilterChip(
-                    selected = state.selectedSlot == slot,
-                    onClick = { viewModel.selectSlot(slot) },
-                    label = { Text(slot.label, fontFamily = sansProText) },
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = PrimaryBlue,
-                        selectedLabelColor = Color.White
-                    )
+        ChipWrap(items = state.availableSlots, perRow = 3) { slot ->
+            FilterChip(
+                selected = state.selectedSlot == slot,
+                onClick = { viewModel.selectSlot(slot) },
+                label = { Text(slot.label, fontFamily = sansProText) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = PrimaryBlue,
+                    selectedLabelColor = Color.White
                 )
-            }
+            )
         }
         if (state.errorMessage != null) {
             Spacer(Modifier.height(8.dp))

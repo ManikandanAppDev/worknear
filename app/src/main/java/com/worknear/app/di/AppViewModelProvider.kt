@@ -15,7 +15,9 @@ import com.worknear.app.ui.main.MainViewModel
 import com.worknear.app.ui.onboarding.CompleteProfileViewModel
 import com.worknear.app.ui.professional.ProfessionalProfileViewModel
 import com.worknear.app.ui.projobs.ProfessionalJobsViewModel
+import com.worknear.app.ui.profile.EditProfileViewModel
 import com.worknear.app.ui.profile.ProfileViewModel
+import com.worknear.app.ui.serviceflow.BookingFlowViewModel
 import com.worknear.app.ui.servicelist.ServiceListViewModel
 import com.worknear.app.ui.wallet.WalletViewModel
 
@@ -55,6 +57,14 @@ object AppViewModelProvider {
             )
         }
 
+        initializer {
+            BookingFlowViewModel(
+                container().professionalRepository,
+                container().accountRepository,
+                container().bookingRepository
+            )
+        }
+
         initializer { BookingConfirmedViewModel(container().bookingRepository) }
 
         initializer { BookingDetailViewModel(container().bookingRepository) }
@@ -68,7 +78,15 @@ object AppViewModelProvider {
         initializer {
             ProfileViewModel(
                 container().accountRepository,
-                container().authRepository
+                container().authRepository,
+                container().tokenStore
+            )
+        }
+
+        initializer {
+            EditProfileViewModel(
+                container().accountRepository,
+                container().tokenStore
             )
         }
     }

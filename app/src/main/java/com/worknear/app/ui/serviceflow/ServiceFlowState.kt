@@ -33,11 +33,17 @@ object ServiceFlowState {
     var categoryId by mutableStateOf("electrician")
         private set
 
-    /** Currently selected professional id on the Best Matches screen. */
+    /** Currently selected professional id (real backend user id) on the Best Matches screen. */
     var selectedProId by mutableStateOf<String?>(null)
+
+    /** Display info for the chosen professional (set when a match is selected). */
+    var selectedMatch by mutableStateOf<MatchProfessional?>(null)
 
     /** Scheduling selection. */
     var scheduledDate by mutableStateOf<String?>(null)
+
+    /** Machine-readable booking date (yyyy-MM-dd) used for the API call. */
+    var scheduledIsoDate by mutableStateOf<String?>(null)
     var scheduledTime by mutableStateOf<String?>(null)
     var notes by mutableStateOf("")
     var address by mutableStateOf("12, Park Street, Chennai - 600001")
@@ -53,6 +59,7 @@ object ServiceFlowState {
             categoryId = id
             cart.clear()
             selectedProId = null
+            selectedMatch = null
         }
     }
 
@@ -96,13 +103,16 @@ object ServiceFlowState {
     fun reset() {
         cart.clear()
         selectedProId = null
+        selectedMatch = null
         scheduledDate = null
+        scheduledIsoDate = null
         scheduledTime = null
         notes = ""
     }
 
+    /** The professional chosen on the Best Matches screen, for display. */
     val selectedPro: MatchProfessional?
-        get() = MatchData.professionals.firstOrNull { it.id == selectedProId }
+        get() = selectedMatch
 
     fun seedSampleIfEmpty() {
         if (cart.isEmpty()) {
