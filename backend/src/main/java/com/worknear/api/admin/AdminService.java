@@ -121,7 +121,8 @@ public class AdminService {
         Page<com.worknear.api.booking.domain.Booking> page = status == null
                 ? bookingRepository.findAll(pageable)
                 : bookingRepository.findByStatus(status, pageable);
-        return PageResponse.from(page, bookingMapper::toResponse);
+        // Admin is not the customer, so pass a null viewer -> completion OTP stays hidden.
+        return PageResponse.from(page, booking -> bookingMapper.toResponse(booking, null));
     }
 
     @Transactional(readOnly = true)
