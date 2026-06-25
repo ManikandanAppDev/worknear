@@ -8,6 +8,8 @@ import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.remote.dto.CreateBookingBody
 import com.worknear.app.data.repository.AccountRepository
 import com.worknear.app.data.repository.BookingRepository
+import com.worknear.app.data.repository.CustomerWorkspaceStore
+import com.worknear.app.data.repository.WalletRepository
 import com.worknear.app.data.repository.ProfessionalRepository
 import com.worknear.app.ui.address.AddressStore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,7 +36,9 @@ data class BookingFlowUiState(
 class BookingFlowViewModel(
     private val professionalRepository: ProfessionalRepository,
     private val accountRepository: AccountRepository,
-    private val bookingRepository: BookingRepository
+    private val bookingRepository: BookingRepository,
+    private val walletRepository: WalletRepository,
+    private val customerWorkspaceStore: CustomerWorkspaceStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookingFlowUiState())
@@ -107,6 +111,7 @@ class BookingFlowViewModel(
             )
             when (val result = bookingRepository.createBooking(body)) {
                 is ApiResult.Success -> {
+                    customerWorkspaceStore.onBookingCreated(walletRepository, bookingRepository)
                     _uiState.update { it.copy(submitting = false) }
                     val id = result.data.id
                     if (id != null) onSuccess(id) else _uiState.update {

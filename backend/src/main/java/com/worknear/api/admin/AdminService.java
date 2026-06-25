@@ -106,11 +106,20 @@ public class AdminService {
         };
         profile.setVerificationStatus(newStatus);
 
+        User user = userRepository.findById(profile.getUserId()).orElse(null);
+        if (user != null) {
+            if (newStatus == VerificationStatus.APPROVED || newStatus == VerificationStatus.PENDING) {
+                user.setRoleConfirmed(true);
+            } else {
+                // REJECTED / MORE_INFO — send the pro back through role selection on next open.
+                user.setRoleConfirmed(false);
+            }
+        }
+
         notificationService.notifyUser(profile.getUserId(), "VERIFICATION_" + newStatus.name(),
                 "Verification " + newStatus.name().toLowerCase(),
                 req.note() != null ? req.note() : "Your verification status is now " + newStatus.name());
 
-        User user = userRepository.findById(profile.getUserId()).orElse(null);
         return new VerificationQueueItem(profile.getId(), profile.getUserId(),
                 user != null ? user.getFullName() : null, user != null ? user.getPhone() : null,
                 List.of(), 0, newStatus);

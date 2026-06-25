@@ -4,6 +4,7 @@ import com.worknear.app.data.model.Booking
 import com.worknear.app.data.model.CancelPreview
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.remote.WorkNearApi
+import com.worknear.app.data.remote.dto.BookingNoteBody
 import com.worknear.app.data.remote.dto.BookingDto
 import com.worknear.app.data.remote.dto.CancelBookingBody
 import com.worknear.app.data.remote.dto.CancelPreviewData
@@ -78,6 +79,9 @@ class BookingRepository(private val api: WorkNearApi) {
 
     suspend fun acceptBooking(bookingId: String): ApiResult<Booking> =
         mapBookingResult { api.acceptBooking(bookingId) }
+
+    suspend fun rejectBooking(bookingId: String, note: String? = null): ApiResult<Booking> =
+        mapBookingResult { api.rejectBooking(bookingId, BookingNoteBody(note)) }
 
     suspend fun markArrived(bookingId: String): ApiResult<Booking> =
         mapBookingResult { api.markArrived(bookingId) }

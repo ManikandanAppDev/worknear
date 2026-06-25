@@ -56,6 +56,7 @@ import com.worknear.app.di.AppViewModelProvider
 import com.worknear.app.ui.address.AddressStore
 import com.worknear.app.ui.address.SelectAddressSheetContent
 import com.worknear.app.ui.components.IconTile
+import com.worknear.app.ui.components.WorkNearCompletionOtpCard
 import com.worknear.app.ui.theme.Background
 import com.worknear.app.ui.theme.BorderGray
 import com.worknear.app.ui.theme.CardColor
@@ -367,6 +368,44 @@ private fun ThreeStepsPromo(modifier: Modifier = Modifier) {
 
 @Composable
 private fun RecentBookingCard(booking: Booking, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    if (booking.status == BookingStatus.COMPLETED_PENDING_OTP && !booking.completionOtp.isNullOrBlank()) {
+        Column(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(CardColor)
+                .border(1.dp, BorderGray, RoundedCornerShape(18.dp))
+                .clickable(onClick = onClick)
+                .padding(14.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconTile(iconRes = R.drawable.ic_wn_otp_shield, tileSize = 48.dp, iconSize = 24.dp)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        booking.serviceName,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = DarkText,
+                        fontFamily = sansProText
+                    )
+                    Text(
+                        "${booking.professionalName} · ${booking.date}",
+                        fontSize = 12.sp,
+                        color = MediumGray,
+                        fontFamily = sansProText
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            WorkNearCompletionOtpCard(
+                otp = booking.completionOtp.orEmpty(),
+                compact = true
+            )
+        }
+        return
+    }
+
     val (badgeText, badgeColor) = bookingStatusBadge(booking)
     Row(
         modifier = modifier
@@ -403,6 +442,7 @@ private fun bookingStatusBadge(booking: Booking): Pair<String, Color> = when (bo
     BookingStatus.IN_PROGRESS -> "In progress" to PrimaryBlue
     BookingStatus.COMPLETED_PENDING_OTP -> "Confirm OTP" to WarningAmber
     BookingStatus.COMPLETED -> "Completed" to SuccessGreen
+    BookingStatus.REJECTED -> "Rejected" to MediumGray
     BookingStatus.CANCELLED -> "Cancelled" to MediumGray
 }
 

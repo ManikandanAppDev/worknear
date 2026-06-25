@@ -174,6 +174,9 @@ public class ProfessionalProfileService {
             throw new BadRequestException("Upload required documents before submitting");
         }
         p.setVerificationStatus(VerificationStatus.PENDING);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> NotFoundException.of("User", userId));
+        user.setRoleConfirmed(true);
         return buildResponse(p);
     }
 

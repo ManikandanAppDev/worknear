@@ -16,6 +16,7 @@ import com.worknear.app.ui.onboarding.CompleteProfileViewModel
 import com.worknear.app.ui.onboarding.OnboardingViewModel
 import com.worknear.app.ui.onboarding.ProfessionalOnboardingViewModel
 import com.worknear.app.ui.onboarding.RoleSelectViewModel
+import com.worknear.app.ui.prodashboard.ProDashboardViewModel
 import com.worknear.app.ui.professional.ProfessionalProfileViewModel
 import com.worknear.app.ui.projobs.ProfessionalJobsViewModel
 import com.worknear.app.ui.profile.EditProfileViewModel
@@ -38,7 +39,8 @@ object AppViewModelProvider {
             ProfessionalOnboardingViewModel(
                 container().professionalRepository,
                 container().accountRepository,
-                container().catalogRepository
+                container().catalogRepository,
+                container().tokenStore
             )
         }
 
@@ -50,8 +52,8 @@ object AppViewModelProvider {
             HomeViewModel(
                 container().catalogRepository,
                 container().professionalRepository,
-                container().accountRepository,
-                container().bookingRepository
+                container().bookingRepository,
+                container().customerWorkspaceStore
             )
         }
 
@@ -68,7 +70,9 @@ object AppViewModelProvider {
             BookServiceViewModel(
                 container().professionalRepository,
                 container().accountRepository,
-                container().bookingRepository
+                container().bookingRepository,
+                container().walletRepository,
+                container().customerWorkspaceStore
             )
         }
 
@@ -76,37 +80,67 @@ object AppViewModelProvider {
             BookingFlowViewModel(
                 container().professionalRepository,
                 container().accountRepository,
-                container().bookingRepository
+                container().bookingRepository,
+                container().walletRepository,
+                container().customerWorkspaceStore
             )
         }
 
         initializer { BookingConfirmedViewModel(container().bookingRepository) }
 
-        initializer { BookingDetailViewModel(container().bookingRepository) }
+        initializer {
+            BookingDetailViewModel(
+                container().bookingRepository,
+                container().walletRepository,
+                container().customerWorkspaceStore
+            )
+        }
 
-        initializer { MyBookingsViewModel(container().bookingRepository) }
+        initializer {
+            MyBookingsViewModel(
+                container().bookingRepository,
+                container().customerWorkspaceStore
+            )
+        }
+
+        initializer {
+            ProDashboardViewModel(
+                container().accountRepository,
+                container().professionalRepository,
+                container().bookingRepository,
+                container().proWorkspaceStore
+            )
+        }
 
         initializer {
             ProfessionalJobsViewModel(
                 container().bookingRepository,
-                container().professionalRepository
+                container().professionalRepository,
+                container().proWorkspaceStore
             )
         }
 
-        initializer { WalletViewModel(container().walletRepository) }
+        initializer {
+            WalletViewModel(
+                container().walletRepository,
+                container().customerWorkspaceStore
+            )
+        }
 
         initializer {
             ProfileViewModel(
                 container().accountRepository,
                 container().authRepository,
-                container().tokenStore
+                container().tokenStore,
+                container().customerWorkspaceStore
             )
         }
 
         initializer {
             EditProfileViewModel(
                 container().accountRepository,
-                container().tokenStore
+                container().tokenStore,
+                container().customerWorkspaceStore
             )
         }
     }

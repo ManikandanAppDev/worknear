@@ -5,6 +5,7 @@ import com.worknear.app.data.remote.dto.AddressRequestBody
 import com.worknear.app.data.remote.dto.ApiEnvelope
 import com.worknear.app.data.remote.dto.AuthData
 import com.worknear.app.data.remote.dto.BannerDto
+import com.worknear.app.data.remote.dto.BookingNoteBody
 import com.worknear.app.data.remote.dto.BookingDto
 import com.worknear.app.data.remote.dto.CancelBookingBody
 import com.worknear.app.data.remote.dto.CancelPreviewData
@@ -139,6 +140,12 @@ interface WorkNearApi {
 
     @POST("api/v1/bookings/{bookingId}/accept")
     suspend fun acceptBooking(@Path("bookingId") bookingId: String): Response<ApiEnvelope<BookingDto>>
+
+    @POST("api/v1/bookings/{bookingId}/reject")
+    suspend fun rejectBooking(
+        @Path("bookingId") bookingId: String,
+        @Body body: BookingNoteBody = BookingNoteBody()
+    ): Response<ApiEnvelope<BookingDto>>
 
     @POST("api/v1/bookings/{bookingId}/on-the-way")
     suspend fun markOnTheWay(@Path("bookingId") bookingId: String): Response<ApiEnvelope<BookingDto>>

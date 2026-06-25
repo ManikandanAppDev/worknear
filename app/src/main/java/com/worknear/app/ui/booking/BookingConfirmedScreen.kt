@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,9 +23,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -50,11 +54,11 @@ import com.worknear.app.utils.WorkNearButtonType
 @Composable
 fun BookingConfirmedScreen(
     bookingId: String,
-    onChat: (String) -> Unit,
     onTrackBooking: () -> Unit,
     viewModel: BookingConfirmedViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     LaunchedEffect(bookingId) { viewModel.load(bookingId) }
 
     val booking = uiState.booking
@@ -87,13 +91,20 @@ fun BookingConfirmedScreen(
                     .background(CardColor)
                     .padding(20.dp)
             ) {
-                WorkNearButton(
-                    text = stringResource(R.string.chat),
-                    buttonType = WorkNearButtonType.OUTLINED,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onChat(booking.professionalId) }
-                )
-                Spacer(Modifier.width(12.dp))
+                if (booking.professionalPhone.isNotBlank()) {
+                    WorkNearButton(
+                        text = "Call professional",
+                        buttonType = WorkNearButtonType.OUTLINED,
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Default.Call,
+                        onClick = {
+                            context.startActivity(
+                                Intent(Intent.ACTION_DIAL, Uri.parse("tel:${booking.professionalPhone}"))
+                            )
+                        }
+                    )
+                    Spacer(Modifier.width(12.dp))
+                }
                 WorkNearButton(
                     text = stringResource(R.string.track_booking),
                     buttonType = WorkNearButtonType.FILLED,

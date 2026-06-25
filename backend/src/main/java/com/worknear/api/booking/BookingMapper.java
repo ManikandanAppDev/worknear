@@ -6,6 +6,7 @@ import com.worknear.api.booking.dto.BookingResponse;
 import com.worknear.api.catalog.ServiceCategoryRepository;
 import com.worknear.api.catalog.domain.ServiceCategory;
 import com.worknear.api.user.UserRepository;
+import com.worknear.api.user.domain.Role;
 import com.worknear.api.user.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -33,11 +34,38 @@ public class BookingMapper {
                 ? b.getCompletionOtpCode()
                 : null;
 
+        User viewer = userRepository.findById(viewerId).orElse(null);
+        boolean proViewer = viewer != null
+                && viewer.getRole() == Role.PROFESSIONAL
+                && b.getProfessionalId() != null
+                && b.getProfessionalId().equals(viewerId);
+        boolean customerContactVisible = !proViewer || b.getStatus() != com.worknear.api.booking.domain.BookingStatus.PENDING;
+
+        String customerPhone = null;
+        if (customerContactVisible) {
+            customerPhone = userRepository.findById(b.getCustomerId()).map(User::getPhone).orElse(null);
+        }
+
+        String addressLine = customerContactVisible ? b.getAddressLine() : null;
+        String city = customerContactVisible ? b.getCity() : null;
+        Double latitude = customerContactVisible ? b.getLatitude() : null;
+        Double longitude = customerContactVisible ? b.getLongitude() : null;
+
+        boolean customerViewer = viewer != null && b.getCustomerId().equals(viewerId);
+        boolean proContactVisible = customerViewer
+                && b.getStatus() != com.worknear.api.booking.domain.BookingStatus.PENDING
+                && b.getStatus() != com.worknear.api.booking.domain.BookingStatus.REJECTED
+                && b.getStatus() != com.worknear.api.booking.domain.BookingStatus.CANCELLED;
+        String professionalPhone = null;
+        if (proContactVisible && b.getProfessionalId() != null) {
+            professionalPhone = userRepository.findById(b.getProfessionalId()).map(User::getPhone).orElse(null);
+        }
+
         return new BookingResponse(
                 b.getId(), b.getCode(), b.getCustomerId(), b.getProfessionalId(), b.getCategoryId(),
-                categoryName, customerName, proName,
+                categoryName, customerName, customerPhone, proName, professionalPhone,
                 b.getScheduledDate(), b.getSlotStart(), b.getSlotEnd(),
-                b.getAddressLine(), b.getCity(), b.getLatitude(), b.getLongitude(),
+                addressLine, city, latitude, longitude,
                 b.getProblemDescription(), b.getStatus(), displayStatus(b), b.getAmount(), b.getCommission(),
                 b.getProEarning(), b.getLockedAmount(), b.getPaymentMethod(), b.getConfirmedAt(),
                 b.getOnTheWayAt(), b.getArrivedAt(), b.getWorkStartedAt(), b.getWorkCompletedAt(),

@@ -212,7 +212,9 @@ data class BookingDto(
     val categoryId: String? = null,
     val categoryName: String? = null,
     val customerName: String? = null,
+    val customerPhone: String? = null,
     val professionalName: String? = null,
+    val professionalPhone: String? = null,
     val scheduledDate: String? = null,
     val slotStart: String? = null,
     val slotEnd: String? = null,
@@ -297,6 +299,8 @@ data class UpdateProProfileBody(
     val serviceRadiusKm: Int? = null,
     val city: String? = null,
     val area: String? = null,
+    val baseLatitude: Double? = null,
+    val baseLongitude: Double? = null,
     val languages: String? = null
 )
 
@@ -330,6 +334,8 @@ data class ProProfileDto(
     val area: String? = null,
     val languages: String? = null,
     val verificationStatus: String? = null,
+    val rating: Double = 0.0,
+    val ratingCount: Int = 0,
     val jobsCompleted: Int = 0,
     val services: List<ProfessionalServiceDto> = emptyList(),
     val documents: List<ProDocumentDto> = emptyList()

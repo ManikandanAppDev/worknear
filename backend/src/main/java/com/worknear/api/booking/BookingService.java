@@ -257,6 +257,7 @@ public class BookingService {
         booking.setCompletionOtpExpiresAt(Instant.now().plus(COMPLETION_OTP_TTL));
         transition(booking, BookingStatus.COMPLETED_PENDING_OTP, proId, "Work completed; waiting for customer OTP");
         booking.setWorkCompletedAt(Instant.now());
+        bookingRepository.save(booking);
         notificationService.notifyUser(booking.getCustomerId(), "BOOKING_COMPLETION_OTP",
                 "Confirm completion", "Share the OTP only after the work is fully completed.");
         return mapper.toResponse(booking, proId);

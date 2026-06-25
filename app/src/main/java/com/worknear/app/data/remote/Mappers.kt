@@ -102,7 +102,10 @@ fun BookingDto.toUiModel(): Booking = Booking(
     uuid = id.orEmpty(),
     id = code ?: id.orEmpty(),
     serviceName = categoryName ?: "Service",
+    customerName = customerName.orEmpty(),
+    customerPhone = customerPhone.orEmpty(),
     professionalName = professionalName ?: "Professional",
+    professionalPhone = professionalPhone.orEmpty(),
     professionalId = professionalId.orEmpty(),
     date = formatDate(scheduledDate),
     rawDate = scheduledDate.orEmpty(),
@@ -111,7 +114,10 @@ fun BookingDto.toUiModel(): Booking = Booking(
     slotEnd = slotEnd.orEmpty(),
     address = listOfNotNull(addressLine?.takeIf { it.isNotBlank() }, city?.takeIf { it.isNotBlank() })
         .joinToString(", "),
+    latitude = latitude,
+    longitude = longitude,
     price = amount.toInt(),
+    proEarning = proEarning.toInt(),
     status = mapBookingStatus(status),
     displayStatus = displayStatus.orEmpty(),
     lockedAmount = lockedAmount.toInt(),
@@ -139,7 +145,8 @@ private fun mapBookingStatus(raw: String?): BookingStatus = when (raw?.uppercase
     "IN_PROGRESS" -> BookingStatus.IN_PROGRESS
     "COMPLETED_PENDING_OTP" -> BookingStatus.COMPLETED_PENDING_OTP
     "COMPLETED" -> BookingStatus.COMPLETED
-    "CANCELLED", "CANCELED", "REJECTED" -> BookingStatus.CANCELLED
+    "REJECTED" -> BookingStatus.REJECTED
+    "CANCELLED", "CANCELED" -> BookingStatus.CANCELLED
     else -> BookingStatus.CONFIRMED
 }
 

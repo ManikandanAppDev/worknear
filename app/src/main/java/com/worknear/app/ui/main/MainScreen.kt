@@ -7,21 +7,21 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import com.worknear.app.ui.components.WorkNearExitDialog
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,11 +37,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.worknear.app.R
+import com.worknear.app.WorkNearApplication
 import com.worknear.app.data.model.ServiceCategory
 import com.worknear.app.di.AppViewModelProvider
 import com.worknear.app.ui.bookings.MyBookingsScreen
 import com.worknear.app.ui.home.HomeTabContent
-import com.worknear.app.ui.projobs.ProfessionalJobsScreen
+import com.worknear.app.ui.prodashboard.ProMainScreen
 import com.worknear.app.ui.profile.UserProfileScreen
 import com.worknear.app.ui.theme.CardColor
 import com.worknear.app.ui.theme.DarkText
@@ -68,8 +69,8 @@ fun MainScreen(
     onNavigateToManageAddresses: () -> Unit = {},
     onNavigateToProfessional: (String) -> Unit,
     onNavigateToBookService: (String) -> Unit,
-    onNavigateToChat: (String) -> Unit,
     onNavigateToBookingDetail: (String) -> Unit = {},
+    onNavigateToProfessionalOnboarding: () -> Unit = {},
     onLogout: () -> Unit = {},
     onCategoryClick: (ServiceCategory) -> Unit = { onNavigateToServiceList(it.id) },
     viewModel: MainViewModel = viewModel(factory = AppViewModelProvider.Factory)
@@ -85,15 +86,33 @@ fun MainScreen(
     }
 
     if (uiState.isProfessional) {
-        ProfessionalJobsScreen(onLogout = onLogout)
+        ProMainScreen(
+            onLogout = onLogout,
+            onNavigateToOnboarding = onNavigateToProfessionalOnboarding
+        )
         return
     }
 
     val context = LocalContext.current
-    var showExitDialog by remember { mutableStateOf(false) }
+    val app = context.applicationContext as WorkNearApplication
+    val container = app.container
+    var showExitDialog by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(selectedTab) {
+        container.customerWorkspaceStore.refresh(
+            container.accountRepository,
+            container.tokenStore,
+            container.walletRepository,
+            container.bookingRepository
+        )
+    }
+
+    BackHandler(enabled = showExitDialog) {
+        showExitDialog = false
+    }
 
     // Back press: from any other tab return to Home; from Home, confirm before exiting.
-    BackHandler {
+    BackHandler(enabled = !showExitDialog) {
         if (selectedTab != MainTab.HOME) {
             selectedTab = MainTab.HOME
         } else {
@@ -102,7 +121,7 @@ fun MainScreen(
     }
 
     if (showExitDialog) {
-        ExitConfirmDialog(
+        WorkNearExitDialog(
             onDismiss = { showExitDialog = false },
             onConfirm = {
                 showExitDialog = false
@@ -147,42 +166,6 @@ fun MainScreen(
         }
         }
     }
-}
-
-@Composable
-private fun ExitConfirmDialog(
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = CardColor,
-        title = {
-            Text(
-                "Exit app?",
-                fontFamily = sansProText,
-                fontWeight = FontWeight.Bold,
-                color = DarkText
-            )
-        },
-        text = {
-            Text(
-                "Would you like to exit WorkNear?",
-                fontFamily = sansProText,
-                color = MediumGray
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text("Exit", fontFamily = sansProText, fontWeight = FontWeight.SemiBold, color = PrimaryBlue)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Stay", fontFamily = sansProText, color = MediumGray)
-            }
-        }
-    )
 }
 
 @Composable

@@ -36,6 +36,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -52,6 +57,7 @@ import com.worknear.app.data.model.CancellationReasonCode
 import com.worknear.app.di.AppViewModelProvider
 import com.worknear.app.ui.components.WorkNearAlert
 import com.worknear.app.ui.components.WorkNearAlertType
+import com.worknear.app.ui.components.WorkNearCompletionOtpCard
 import com.worknear.app.ui.components.WorkNearTopBar
 import com.worknear.app.ui.theme.Background
 import com.worknear.app.ui.theme.BorderGray
@@ -75,10 +81,10 @@ import java.time.LocalDate
 fun BookingDetailScreen(
     bookingUuid: String,
     onNavigateBack: () -> Unit,
-    onChat: (String) -> Unit,
     viewModel: BookingDetailViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
     LaunchedEffect(bookingUuid) { viewModel.load(bookingUuid) }
 
     Scaffold(
@@ -119,9 +125,14 @@ fun BookingDetailScreen(
                     JobStatusCard(booking)
                     Spacer(Modifier.height(16.dp))
                     LockedAmountCard(booking)
-                    if (booking.completionOtp != null) {
+                    if (booking.status == BookingStatus.COMPLETED_PENDING_OTP) {
                         Spacer(Modifier.height(16.dp))
-                        CompletionOtpCard(booking)
+                        booking.completionOtp?.takeIf { it.isNotBlank() }?.let { otp ->
+                            WorkNearCompletionOtpCard(otp = otp)
+                        } ?: WorkNearAlert(
+                            message = "Your completion OTP will appear here once the professional marks the work complete.",
+                            type = WorkNearAlertType.INFO
+                        )
                     }
                     Spacer(Modifier.height(16.dp))
 
@@ -158,12 +169,29 @@ fun BookingDetailScreen(
                             BookingStatus.ARRIVED,
                             BookingStatus.IN_PROGRESS,
                             BookingStatus.COMPLETED_PENDING_OTP
-                        )
+                        ) && booking.professionalPhone.isNotBlank()
                     ) {
                         WorkNearButton(
-                            text = "Chat with professional",
+                            text = "Call professional",
                             buttonType = WorkNearButtonType.FILLED,
-                            onClick = { onChat(booking.professionalId) }
+                            icon = Icons.Default.Call,
+                            onClick = {
+                                context.startActivity(
+                                    Intent(Intent.ACTION_DIAL, Uri.parse("tel:${booking.professionalPhone}"))
+                                )
+                            }
+                        )
+                    } else if (booking.status in listOf(
+                            BookingStatus.CONFIRMED,
+                            BookingStatus.ON_THE_WAY,
+                            BookingStatus.ARRIVED,
+                            BookingStatus.IN_PROGRESS,
+                            BookingStatus.COMPLETED_PENDING_OTP
+                        )
+                    ) {
+                        WorkNearAlert(
+                            message = "Professional phone will be available once they accept your booking.",
+                            type = WorkNearAlertType.INFO
                         )
                     }
                 }
@@ -295,6 +323,7 @@ private fun StatusPill(status: BookingStatus) {
         BookingStatus.IN_PROGRESS -> Triple(WarningAmberLight, PrimaryBlue, "Work started")
         BookingStatus.COMPLETED_PENDING_OTP -> Triple(WarningAmberLight, PrimaryBlue, "OTP pending")
         BookingStatus.COMPLETED -> Triple(SuccessGreenLight, SuccessGreen, "Completed")
+        BookingStatus.REJECTED -> Triple(ErrorRedLight, ErrorRed, "Rejected")
         BookingStatus.CANCELLED -> Triple(ErrorRedLight, ErrorRed, "Cancelled")
     }
     Text(
@@ -327,7 +356,11 @@ private fun JobStatusCard(booking: Booking) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                statusSubtitle(booking),
+                if (booking.status == BookingStatus.COMPLETED_PENDING_OTP && !booking.completionOtp.isNullOrBlank()) {
+                    "Your OTP is ready — share it only after verifying the completed work."
+                } else {
+                    statusSubtitle(booking)
+                },
                 fontSize = 13.sp,
                 color = MediumGray,
                 fontFamily = sansProText
@@ -432,49 +465,6 @@ private fun LockedAmountCard(booking: Booking) {
     }
 }
 
-@Composable
-private fun CompletionOtpCard(booking: Booking) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = WarningAmberLight),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_wn_otp_shield),
-                    contentDescription = null,
-                    tint = PrimaryBlue,
-                    modifier = Modifier.size(22.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text("Your completion OTP", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkText, fontFamily = sansProText)
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                booking.completionOtp.orEmpty().forEach { digit ->
-                    Box(
-                        modifier = Modifier
-                            .size(42.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(CardColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(digit.toString(), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PrimaryBlue, fontFamily = sansProText)
-                    }
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "Share this OTP only after the work is fully completed. The professional enters it in their app and payment transfers automatically.",
-                fontSize = 13.sp,
-                color = DarkText,
-                fontFamily = sansProText
-            )
-        }
-    }
-}
-
 private fun statusTitle(booking: Booking): String = when {
     booking.status == BookingStatus.PENDING || booking.status == BookingStatus.CONFIRMED -> {
         if (isScheduledToday(booking)) "Arriving today" else "Booking confirmed"
@@ -515,7 +505,7 @@ private fun statusProgress(status: BookingStatus): Int = when (status) {
     BookingStatus.IN_PROGRESS -> 4
     BookingStatus.COMPLETED_PENDING_OTP -> 5
     BookingStatus.COMPLETED -> 6
-    BookingStatus.CANCELLED -> 0
+    BookingStatus.REJECTED, BookingStatus.CANCELLED -> 0
 }
 
 private fun isScheduledToday(booking: Booking): Boolean {

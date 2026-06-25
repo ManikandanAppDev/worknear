@@ -1,6 +1,5 @@
 package com.worknear.app.ui.onboarding
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,9 +18,9 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Handyman
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,9 +66,6 @@ fun RoleSelectScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var selected by remember { mutableStateOf<String?>(null) }
-
-    // This is a deliberate fork in onboarding — block accidental back navigation.
-    BackHandler(enabled = true) { }
 
     Column(
         modifier = Modifier

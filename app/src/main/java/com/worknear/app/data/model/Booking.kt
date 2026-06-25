@@ -8,6 +8,7 @@ enum class BookingStatus {
     IN_PROGRESS,
     COMPLETED_PENDING_OTP,
     COMPLETED,
+    REJECTED,
     CANCELLED
 }
 
@@ -29,7 +30,10 @@ data class Booking(
     val uuid: String,
     val id: String,
     val serviceName: String,
+    val customerName: String = "",
+    val customerPhone: String = "",
     val professionalName: String,
+    val professionalPhone: String = "",
     val professionalId: String,
     val date: String,
     val rawDate: String,
@@ -37,7 +41,10 @@ data class Booking(
     val slotStart: String,
     val slotEnd: String,
     val address: String,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val price: Int,
+    val proEarning: Int = 0,
     val status: BookingStatus,
     val displayStatus: String = "",
     val lockedAmount: Int = 0,
@@ -55,7 +62,10 @@ data class Booking(
     val rescheduleMax: Int = 2,
     val canReschedule: Boolean = false,
     val canCancel: Boolean = false
-)
+) {
+    val customerContactVisible: Boolean
+        get() = status != BookingStatus.PENDING
+}
 
 data class CancelPreview(
     val canCancel: Boolean,

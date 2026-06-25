@@ -12,6 +12,8 @@ import com.worknear.app.data.repository.AuthRepository
 import com.worknear.app.data.repository.BannerRepository
 import com.worknear.app.data.repository.BookingRepository
 import com.worknear.app.data.repository.CatalogRepository
+import com.worknear.app.data.repository.CustomerWorkspaceStore
+import com.worknear.app.data.repository.ProWorkspaceStore
 import com.worknear.app.data.repository.ProfessionalRepository
 import com.worknear.app.data.repository.WalletRepository
 import okhttp3.OkHttpClient
@@ -67,7 +69,9 @@ class AppContainer(context: Context) {
     val catalogRepository = CatalogRepository(api)
     val professionalRepository = ProfessionalRepository(api)
     val bookingRepository = BookingRepository(api)
+    val proWorkspaceStore = ProWorkspaceStore()
+    val customerWorkspaceStore = CustomerWorkspaceStore()
     val walletRepository = WalletRepository(api)
-    val accountRepository = AccountRepository(api)
+    val accountRepository = AccountRepository(api, professionalRepository)
     val bannerRepository = BannerRepository(api)
 }

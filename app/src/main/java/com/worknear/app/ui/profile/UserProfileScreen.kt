@@ -107,14 +107,14 @@ fun UserProfileScreen(
                 }
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    uiState.name.ifBlank { profile.name },
+                    uiState.name.ifBlank { "WorkNear User" },
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = DarkText,
                     fontFamily = sansProText
                 )
                 Text(
-                    uiState.phone.ifBlank { profile.phone },
+                    uiState.phone,
                     fontSize = 14.sp,
                     color = MediumGray,
                     fontFamily = sansProText

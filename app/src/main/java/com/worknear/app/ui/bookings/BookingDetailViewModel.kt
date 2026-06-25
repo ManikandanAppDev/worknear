@@ -7,6 +7,8 @@ import com.worknear.app.data.model.CancelPreview
 import com.worknear.app.data.model.CancellationReasonCode
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.repository.BookingRepository
+import com.worknear.app.data.repository.CustomerWorkspaceStore
+import com.worknear.app.data.repository.WalletRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,7 +47,9 @@ private val defaultSlots = listOf(
 )
 
 class BookingDetailViewModel(
-    private val bookingRepository: BookingRepository
+    private val bookingRepository: BookingRepository,
+    private val walletRepository: WalletRepository,
+    private val customerWorkspaceStore: CustomerWorkspaceStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(BookingDetailUiState())
@@ -62,8 +66,11 @@ class BookingDetailViewModel(
         }
         viewModelScope.launch {
             when (val result = bookingRepository.getBooking(uuid)) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(isLoading = false, booking = result.data)
+                is ApiResult.Success -> {
+                    customerWorkspaceStore.applyBookingUpdate(result.data)
+                    _uiState.update {
+                        it.copy(isLoading = false, booking = result.data)
+                    }
                 }
                 is ApiResult.Error -> _uiState.update {
                     it.copy(isLoading = false, errorMessage = result.message)
@@ -115,13 +122,16 @@ class BookingDetailViewModel(
             when (val result = bookingRepository.cancelBooking(
                 uuid, reason.name, _uiState.value.cancelComment.ifBlank { null }
             )) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(
-                        isSubmitting = false,
-                        booking = result.data,
-                        activeSheet = BookingDetailSheet.NONE,
-                        successMessage = "Booking cancelled successfully"
-                    )
+                is ApiResult.Success -> {
+                    customerWorkspaceStore.onBookingMutated(result.data, walletRepository)
+                    _uiState.update {
+                        it.copy(
+                            isSubmitting = false,
+                            booking = result.data,
+                            activeSheet = BookingDetailSheet.NONE,
+                            successMessage = "Booking cancelled successfully"
+                        )
+                    }
                 }
                 is ApiResult.Error -> _uiState.update {
                     it.copy(isSubmitting = false, errorMessage = result.message)
@@ -170,13 +180,16 @@ class BookingDetailViewModel(
         _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
         viewModelScope.launch {
             when (val result = bookingRepository.rescheduleBooking(uuid, date, slot.start, slot.end)) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(
-                        isSubmitting = false,
-                        booking = result.data,
-                        activeSheet = BookingDetailSheet.NONE,
-                        successMessage = "Booking rescheduled successfully"
-                    )
+                is ApiResult.Success -> {
+                    customerWorkspaceStore.applyBookingUpdate(result.data)
+                    _uiState.update {
+                        it.copy(
+                            isSubmitting = false,
+                            booking = result.data,
+                            activeSheet = BookingDetailSheet.NONE,
+                            successMessage = "Booking rescheduled successfully"
+                        )
+                    }
                 }
                 is ApiResult.Error -> _uiState.update {
                     it.copy(isSubmitting = false, errorMessage = result.message)

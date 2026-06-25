@@ -2,6 +2,7 @@ package com.worknear.app.ui.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.worknear.app.data.local.TokenStore
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.remote.dto.ProServiceItemBody
 import com.worknear.app.data.remote.dto.UpdateProProfileBody
@@ -9,6 +10,7 @@ import com.worknear.app.data.remote.dto.UpdateProfileBody
 import com.worknear.app.data.repository.AccountRepository
 import com.worknear.app.data.repository.CatalogRepository
 import com.worknear.app.data.repository.ProfessionalRepository
+import com.worknear.app.utils.ResolvedLocation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +20,14 @@ import java.io.File
 
 enum class ProOnboardStep { PROFILE, DOCUMENTS }
 
-/** A document the pro picked from their gallery, copied to a local file ready for upload. */
+enum class LocationFetchState {
+    NOT_STARTED,
+    FETCHING,
+    SUCCESS,
+    DENIED,
+    FAILED
+}
+
 data class ProDocumentPick(
     val type: String,
     val file: File,
@@ -32,30 +41,50 @@ data class CategoryOption(
     val basePrice: Double
 )
 
+data class ExperienceOption(
+    val label: String,
+    val years: Int
+)
+
+val PRO_EXPERIENCE_OPTIONS = listOf(
+    ExperienceOption("Less than 1 year", 0),
+    ExperienceOption("1–2 Years", 2),
+    ExperienceOption("3–5 Years", 4),
+    ExperienceOption("5+ Years", 5)
+)
+
 data class ProfessionalOnboardingUiState(
     val step: ProOnboardStep = ProOnboardStep.PROFILE,
     val isLoading: Boolean = true,
     val isSubmitting: Boolean = false,
     val errorMessage: String? = null,
     val fullName: String = "",
+    val avatarUri: String? = null,
     val city: String = "",
     val area: String = "",
-    val experience: String = "",
-    val bio: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val locationState: LocationFetchState = LocationFetchState.NOT_STARTED,
+    val locationPromptStarted: Boolean = false,
     val categories: List<CategoryOption> = emptyList(),
     val selectedCategoryIds: Set<String> = emptySet(),
+    val selectedExperienceYears: Int? = null,
     val documents: Map<String, ProDocumentPick> = emptyMap()
-)
+) {
+    val isProfileStepComplete: Boolean
+        get() = fullName.isNotBlank() &&
+            selectedCategoryIds.isNotEmpty() &&
+            selectedExperienceYears != null &&
+            city.isNotBlank() &&
+            area.isNotBlank() &&
+            locationState == LocationFetchState.SUCCESS
+}
 
-/**
- * Drives the professional onboarding flow: (1) profile + services, (2) verification documents.
- * Every step is persisted to the backend via the real professional and account endpoints,
- * and finishes by submitting the profile for admin review.
- */
 class ProfessionalOnboardingViewModel(
     private val professionalRepository: ProfessionalRepository,
     private val accountRepository: AccountRepository,
-    private val catalogRepository: CatalogRepository
+    private val catalogRepository: CatalogRepository,
+    private val tokenStore: TokenStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfessionalOnboardingUiState())
@@ -67,7 +96,7 @@ class ProfessionalOnboardingViewModel(
 
     private fun load() {
         viewModelScope.launch {
-            // Prefill the name from the account, and any saved profile fields.
+            val localAvatar = tokenStore.cachedAvatar()
             val name = (accountRepository.getMe() as? ApiResult.Success)?.data?.fullName.orEmpty()
             val proProfile = (professionalRepository.getMyProfile() as? ApiResult.Success)?.data
             val categories = when (val r = catalogRepository.getCategoriesRaw()) {
@@ -77,28 +106,75 @@ class ProfessionalOnboardingViewModel(
                 }
                 is ApiResult.Error -> emptyList()
             }
+            val savedIds = proProfile?.services?.mapNotNull { it.categoryId }?.toSet().orEmpty()
+            val savedYears = proProfile?.experienceYears?.takeIf { it > 0 }
+            val savedCity = proProfile?.city.orEmpty()
+            val savedArea = proProfile?.area.orEmpty()
+            val hasSavedLocation = savedCity.isNotBlank() && savedArea.isNotBlank()
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     fullName = name.ifBlank { it.fullName },
-                    city = proProfile?.city ?: it.city,
-                    area = proProfile?.area ?: it.area,
-                    experience = proProfile?.experienceYears?.takeIf { y -> y > 0 }?.toString() ?: it.experience,
-                    bio = proProfile?.bio ?: it.bio,
+                    avatarUri = localAvatar,
                     categories = categories,
-                    selectedCategoryIds = proProfile?.services
-                        ?.mapNotNull { s -> s.categoryId }?.toSet() ?: it.selectedCategoryIds
+                    selectedCategoryIds = savedIds.ifEmpty { it.selectedCategoryIds },
+                    selectedExperienceYears = savedYears ?: it.selectedExperienceYears,
+                    city = savedCity,
+                    area = savedArea,
+                    locationState = if (hasSavedLocation) LocationFetchState.SUCCESS else it.locationState
                 )
             }
         }
     }
 
+    fun markLocationPromptStarted() {
+        _uiState.update { it.copy(locationPromptStarted = true) }
+    }
+
+    fun beginLocationFetch() {
+        _uiState.update {
+            it.copy(locationState = LocationFetchState.FETCHING, errorMessage = null)
+        }
+    }
+
+    fun onLocationResolved(location: ResolvedLocation) {
+        _uiState.update {
+            it.copy(
+                city = location.city,
+                area = location.area,
+                latitude = location.latitude,
+                longitude = location.longitude,
+                locationState = LocationFetchState.SUCCESS,
+                errorMessage = null
+            )
+        }
+    }
+
+    fun onLocationPermissionDenied() {
+        _uiState.update {
+            it.copy(
+                city = "",
+                area = "",
+                latitude = null,
+                longitude = null,
+                locationState = LocationFetchState.DENIED
+            )
+        }
+    }
+
+    fun onLocationFetchFailed() {
+        _uiState.update {
+            it.copy(
+                city = "",
+                area = "",
+                latitude = null,
+                longitude = null,
+                locationState = LocationFetchState.FAILED
+            )
+        }
+    }
+
     fun onNameChange(value: String) = _uiState.update { it.copy(fullName = value, errorMessage = null) }
-    fun onCityChange(value: String) = _uiState.update { it.copy(city = value, errorMessage = null) }
-    fun onAreaChange(value: String) = _uiState.update { it.copy(area = value, errorMessage = null) }
-    fun onBioChange(value: String) = _uiState.update { it.copy(bio = value, errorMessage = null) }
-    fun onExperienceChange(value: String) =
-        _uiState.update { it.copy(experience = value.filter { ch -> ch.isDigit() }.take(2), errorMessage = null) }
 
     fun toggleCategory(id: String) {
         _uiState.update {
@@ -108,34 +184,44 @@ class ProfessionalOnboardingViewModel(
         }
     }
 
+    fun onExperienceSelected(years: Int) =
+        _uiState.update { it.copy(selectedExperienceYears = years, errorMessage = null) }
+
+    fun onAvatarPicked(uri: String) {
+        viewModelScope.launch {
+            tokenStore.saveAvatar(uri)
+            _uiState.update { it.copy(avatarUri = uri, errorMessage = null) }
+        }
+    }
+
     fun onDocumentPicked(pick: ProDocumentPick) {
         _uiState.update { it.copy(documents = it.documents + (pick.type to pick), errorMessage = null) }
     }
 
     fun backToProfile() = _uiState.update { it.copy(step = ProOnboardStep.PROFILE, errorMessage = null) }
 
-    /** Persists the profile + chosen services, then advances to the documents step. */
     fun saveProfileAndContinue() {
         val state = _uiState.value
-        if (state.fullName.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "Please enter your full name") }
-            return
-        }
-        if (state.selectedCategoryIds.isEmpty()) {
-            _uiState.update { it.copy(errorMessage = "Select at least one service you offer") }
-            return
-        }
+        if (!state.isProfileStepComplete) return
         _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
         viewModelScope.launch {
-            val nameResult = accountRepository.updateProfile(UpdateProfileBody(fullName = state.fullName.trim()))
+            val nameResult = accountRepository.updateProfile(
+                UpdateProfileBody(
+                    fullName = state.fullName.trim(),
+                    avatarUrl = state.avatarUri
+                )
+            )
             if (nameResult is ApiResult.Error) return@launch fail(nameResult.message)
+
+            tokenStore.updateProfileLocal(name = state.fullName.trim())
 
             val profileResult = professionalRepository.updateMyProfile(
                 UpdateProProfileBody(
-                    bio = state.bio.trim().ifBlank { null },
-                    experienceYears = state.experience.toIntOrNull() ?: 0,
-                    city = state.city.trim().ifBlank { null },
-                    area = state.area.trim().ifBlank { null }
+                    experienceYears = state.selectedExperienceYears,
+                    city = state.city.trim(),
+                    area = state.area.trim(),
+                    baseLatitude = state.latitude,
+                    baseLongitude = state.longitude
                 )
             )
             if (profileResult is ApiResult.Error) return@launch fail(profileResult.message)
@@ -153,11 +239,10 @@ class ProfessionalOnboardingViewModel(
         }
     }
 
-    /** Uploads the picked documents, then submits the profile for admin verification. */
     fun submit(onCompleted: () -> Unit) {
         val state = _uiState.value
-        if (state.documents.isEmpty()) {
-            _uiState.update { it.copy(errorMessage = "Upload at least one verification document") }
+        if (state.documents["GOV_ID"] == null) {
+            _uiState.update { it.copy(errorMessage = "Upload your Aadhar card to continue") }
             return
         }
         _uiState.update { it.copy(isSubmitting = true, errorMessage = null) }
@@ -168,6 +253,7 @@ class ProfessionalOnboardingViewModel(
             }
             when (val submit = professionalRepository.submitForVerification()) {
                 is ApiResult.Success -> {
+                    tokenStore.clearPendingRoleSelection()
                     _uiState.update { it.copy(isSubmitting = false) }
                     onCompleted()
                 }

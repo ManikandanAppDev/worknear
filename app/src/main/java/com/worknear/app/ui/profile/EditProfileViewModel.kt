@@ -6,6 +6,7 @@ import com.worknear.app.data.local.TokenStore
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.remote.dto.UpdateProfileBody
 import com.worknear.app.data.repository.AccountRepository
+import com.worknear.app.data.repository.CustomerWorkspaceStore
 import com.worknear.app.utils.filterMobileInput
 import com.worknear.app.utils.normalizeIndianMobile
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +26,6 @@ data class EditProfileUiState(
     val isSaving: Boolean = false,
     val savedMessage: String? = null,
     val errorMessage: String? = null,
-    // Phone-change sub-flow
     val showPhoneSheet: Boolean = false,
     val phoneStep: PhoneChangeStep = PhoneChangeStep.ENTER_PHONE,
     val newPhone: String = "",
@@ -37,7 +37,8 @@ data class EditProfileUiState(
 
 class EditProfileViewModel(
     private val accountRepository: AccountRepository,
-    private val tokenStore: TokenStore
+    private val tokenStore: TokenStore,
+    private val customerWorkspaceStore: CustomerWorkspaceStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(EditProfileUiState())
@@ -50,20 +51,16 @@ class EditProfileViewModel(
     fun load() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch {
-            val localAvatar = tokenStore.cachedAvatar()
-            when (val me = accountRepository.getMe()) {
-                is ApiResult.Success -> _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        name = me.data.fullName.orEmpty(),
-                        phone = me.data.phone.orEmpty(),
-                        email = me.data.email.orEmpty(),
-                        avatarUri = localAvatar ?: me.data.avatarUrl
-                    )
-                }
-                is ApiResult.Error -> _uiState.update {
-                    it.copy(isLoading = false, errorMessage = me.message, avatarUri = localAvatar)
-                }
+            customerWorkspaceStore.refreshProfile(accountRepository, tokenStore)
+            val profile = customerWorkspaceStore.profile.value
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    name = profile.name,
+                    phone = profile.phone,
+                    email = profile.email,
+                    avatarUri = profile.avatarUrl
+                )
             }
         }
     }
@@ -84,13 +81,18 @@ class EditProfileViewModel(
         }
         _uiState.update { it.copy(isSaving = true, errorMessage = null, savedMessage = null) }
         viewModelScope.launch {
-            val body = UpdateProfileBody(
-                fullName = name,
-                email = _uiState.value.email.trim().ifBlank { null }
-            )
+            val email = _uiState.value.email.trim().ifBlank { null }
+            val body = UpdateProfileBody(fullName = name, email = email)
             when (val result = accountRepository.updateProfile(body)) {
                 is ApiResult.Success -> {
                     tokenStore.updateProfileLocal(name = name)
+                    val localAvatar = tokenStore.cachedAvatar()
+                    customerWorkspaceStore.updateProfile(
+                        name = result.data.fullName ?: name,
+                        phone = result.data.phone.orEmpty(),
+                        email = result.data.email.orEmpty(),
+                        avatarUrl = localAvatar ?: result.data.avatarUrl
+                    )
                     _uiState.update {
                         it.copy(isSaving = false, savedMessage = "Profile updated")
                     }
@@ -102,15 +104,13 @@ class EditProfileViewModel(
         }
     }
 
-    /** Persists the picked image (a file:// URI) locally and shows it immediately. */
     fun onAvatarPicked(uri: String) {
         viewModelScope.launch {
             tokenStore.saveAvatar(uri)
+            customerWorkspaceStore.updateProfile(avatarUrl = uri)
             _uiState.update { it.copy(avatarUri = uri, savedMessage = "Photo updated") }
         }
     }
-
-    // ----- Phone change -----
 
     fun openPhoneSheet() {
         _uiState.update {
@@ -178,6 +178,7 @@ class EditProfileViewModel(
                         tokenStore.updateTokens(access, refresh)
                     }
                     tokenStore.updateProfileLocal(phone = phone)
+                    customerWorkspaceStore.updateProfile(phone = phone)
                     _uiState.update {
                         it.copy(
                             phoneSubmitting = false,

@@ -62,4 +62,24 @@ class ProfessionalRepository(private val api: WorkNearApi) {
 
     suspend fun submitForVerification(): ApiResult<ProProfileDto> =
         safeCall { api.submitProVerification() }
+
+    /**
+     * Professionals return to role selection until verification is submitted (PENDING) or approved.
+     */
+    suspend fun shouldShowRoleSelection(): Boolean {
+        return when (val result = getMyProfile()) {
+            is ApiResult.Success -> {
+                when (result.data.verificationStatus?.uppercase()) {
+                    "PENDING", "APPROVED" -> false
+                    else -> true
+                }
+            }
+            is ApiResult.Error -> false
+        }
+    }
+
+    /**
+     * True while the pro still needs to finish profile, services, and document submission.
+     */
+    suspend fun needsOnboarding(): Boolean = shouldShowRoleSelection()
 }

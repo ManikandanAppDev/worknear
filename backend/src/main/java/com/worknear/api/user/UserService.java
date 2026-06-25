@@ -99,7 +99,8 @@ public class UserService {
         }
         User user = getUser(userId);
         user.setRole(role);
-        user.setRoleConfirmed(true);
+        // Customers finish role pick here; pros confirm only after verification is submitted.
+        user.setRoleConfirmed(role == Role.CUSTOMER);
         if (role == Role.PROFESSIONAL && professionalProfileRepository.findByUserId(userId).isEmpty()) {
             ProfessionalProfile profile = new ProfessionalProfile();
             profile.setUserId(userId);

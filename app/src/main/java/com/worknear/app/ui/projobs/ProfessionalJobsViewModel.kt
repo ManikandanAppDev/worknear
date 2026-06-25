@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.worknear.app.data.model.Booking
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.repository.BookingRepository
+import com.worknear.app.data.repository.ProWorkspaceStore
 import com.worknear.app.data.repository.ProfessionalRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,8 @@ data class ProfessionalJobsUiState(
 
 class ProfessionalJobsViewModel(
     private val bookingRepository: BookingRepository,
-    private val professionalRepository: ProfessionalRepository
+    private val professionalRepository: ProfessionalRepository,
+    private val proWorkspaceStore: ProWorkspaceStore
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfessionalJobsUiState())
@@ -34,6 +36,27 @@ class ProfessionalJobsViewModel(
 
     init {
         loadVerificationStatus()
+        viewModelScope.launch {
+            proWorkspaceStore.openJobs.collect { jobs ->
+                _uiState.update { state ->
+                    val selected = state.selectedJob?.let { sel ->
+                        jobs.find { it.uuid == sel.uuid }
+                    } ?: jobs.firstOrNull()
+                    state.copy(
+                        isLoading = proWorkspaceStore.isRefreshing.value && jobs.isEmpty(),
+                        jobs = jobs,
+                        selectedJob = selected
+                    )
+                }
+            }
+        }
+        viewModelScope.launch {
+            proWorkspaceStore.isRefreshing.collect { refreshing ->
+                if (!refreshing && proWorkspaceStore.openJobs.value.isNotEmpty()) {
+                    _uiState.update { it.copy(isLoading = false) }
+                }
+            }
+        }
         loadJobs()
     }
 
@@ -47,22 +70,17 @@ class ProfessionalJobsViewModel(
     fun loadJobs() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
         viewModelScope.launch {
-            val requests = bookingRepository.professionalBookings("REQUESTS")
-            val active = bookingRepository.professionalBookings("ACTIVE")
-            if (requests is ApiResult.Success && active is ApiResult.Success) {
-                val jobs = requests.data + active.data
+            proWorkspaceStore.refresh(bookingRepository, professionalRepository)
+            val jobs = proWorkspaceStore.openJobs.value
+            if (jobs.isNotEmpty() || !proWorkspaceStore.isRefreshing.value) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
                         jobs = jobs,
-                        selectedJob = it.selectedJob ?: jobs.firstOrNull()
+                        selectedJob = it.selectedJob?.let { sel -> jobs.find { j -> j.uuid == sel.uuid } }
+                            ?: jobs.firstOrNull()
                     )
                 }
-            } else {
-                val message = (requests as? ApiResult.Error)?.message
-                    ?: (active as? ApiResult.Error)?.message
-                    ?: "Unable to load jobs"
-                _uiState.update { it.copy(isLoading = false, errorMessage = message) }
             }
         }
     }
@@ -78,6 +96,30 @@ class ProfessionalJobsViewModel(
     fun markOnTheWay() = updateSelected("Marked on the way") { bookingRepository.markOnTheWay(it) }
 
     fun acceptJob() = updateSelected("Job accepted") { bookingRepository.acceptBooking(it) }
+
+    fun rejectJob() {
+        val job = _uiState.value.selectedJob ?: return
+        _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
+        viewModelScope.launch {
+            when (val result = bookingRepository.rejectBooking(job.uuid)) {
+                is ApiResult.Success -> {
+                    proWorkspaceStore.removeOpenJob(job.uuid)
+                    val remaining = proWorkspaceStore.openJobs.value
+                    _uiState.update { state ->
+                        state.copy(
+                            isSubmitting = false,
+                            jobs = remaining,
+                            selectedJob = remaining.firstOrNull(),
+                            successMessage = "Booking declined"
+                        )
+                    }
+                }
+                is ApiResult.Error -> _uiState.update {
+                    it.copy(isSubmitting = false, errorMessage = result.message)
+                }
+            }
+        }
+    }
 
     fun markArrived() = updateSelected("Marked arrived") { bookingRepository.markArrived(it) }
 
@@ -102,15 +144,18 @@ class ProfessionalJobsViewModel(
         _uiState.update { it.copy(isSubmitting = true, errorMessage = null, successMessage = null) }
         viewModelScope.launch {
             when (val result = action(job.uuid)) {
-                is ApiResult.Success -> _uiState.update { state ->
-                    val updatedJobs = state.jobs.map { if (it.uuid == result.data.uuid) result.data else it }
-                    state.copy(
-                        isSubmitting = false,
-                        jobs = updatedJobs,
-                        selectedJob = result.data,
-                        otp = "",
-                        successMessage = success
-                    )
+                is ApiResult.Success -> {
+                    proWorkspaceStore.applyBookingUpdate(result.data)
+                    _uiState.update { state ->
+                        val updatedJobs = proWorkspaceStore.openJobs.value
+                        state.copy(
+                            isSubmitting = false,
+                            jobs = updatedJobs,
+                            selectedJob = updatedJobs.find { it.uuid == result.data.uuid } ?: result.data,
+                            otp = "",
+                            successMessage = success
+                        )
+                    }
                 }
                 is ApiResult.Error -> _uiState.update {
                     it.copy(isSubmitting = false, errorMessage = result.message)

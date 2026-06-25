@@ -18,7 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -50,13 +53,13 @@ import com.worknear.app.ui.theme.sansProText
 
 @Composable
 fun CompleteProfileScreen(
+    onNavigateBack: () -> Unit,
     onCompleted: () -> Unit,
     viewModel: CompleteProfileViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // This is a mandatory step — swallow the system back press so the user can't skip it.
-    BackHandler(enabled = true) { }
+    BackHandler(onBack = onNavigateBack)
 
     Column(
         modifier = Modifier
@@ -68,22 +71,29 @@ fun CompleteProfileScreen(
                 .fillMaxWidth()
                 .background(CardColor)
                 .statusBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 18.dp)
+                .padding(horizontal = 8.dp, vertical = 8.dp)
         ) {
-            Text(
-                "Almost there",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                color = DarkText,
-                fontFamily = sansProText
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Tell us your name and where you'd like the pro to come.",
-                fontSize = 14.sp,
-                color = MediumGray,
-                fontFamily = sansProText
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = DarkText)
+                }
+            }
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                Text(
+                    "Almost there",
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkText,
+                    fontFamily = sansProText
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Tell us your name and where you'd like the pro to come.",
+                    fontSize = 14.sp,
+                    color = MediumGray,
+                    fontFamily = sansProText
+                )
+            }
         }
 
         Column(

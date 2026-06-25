@@ -13,7 +13,10 @@ import com.worknear.app.data.remote.dto.UserDto
 import com.worknear.app.data.remote.safeCall
 import com.worknear.app.data.remote.safeUnit
 
-class AccountRepository(private val api: WorkNearApi) {
+class AccountRepository(
+    private val api: WorkNearApi,
+    private val professionalRepository: ProfessionalRepository
+) {
 
     suspend fun getMe(): ApiResult<UserDto> = safeCall { api.me() }
 
@@ -41,12 +44,17 @@ class AccountRepository(private val api: WorkNearApi) {
 
     /**
      * Whether the signed-in user still needs the post-OTP "Who are you?" role step.
-     * Driven by the backend [UserDto.roleConfirmed] flag so returning test accounts are not
-     * treated as fully onboarded just because they already exist in the database.
+     * Customers: until [UserDto.roleConfirmed]. Professionals: until verification is PENDING or APPROVED.
      */
     suspend fun needsRoleSelection(): Boolean {
         return when (val me = getMe()) {
-            is ApiResult.Success -> me.data.roleConfirmed != true
+            is ApiResult.Success -> {
+                if (me.data.role.equals("PROFESSIONAL", ignoreCase = true)) {
+                    professionalRepository.shouldShowRoleSelection()
+                } else {
+                    me.data.roleConfirmed != true
+                }
+            }
             is ApiResult.Error -> false
         }
     }
@@ -60,8 +68,6 @@ class AccountRepository(private val api: WorkNearApi) {
         val me = getMe()
         if (me is ApiResult.Error) return false
         val user = (me as ApiResult.Success).data
-        // Professionals have their own onboarding (profile + documents) and don't need a
-        // customer address, so the customer onboarding gate never applies to them.
         if (user.role.equals("PROFESSIONAL", ignoreCase = true)) return false
         val nameMissing = user.fullName.isNullOrBlank()
         val noAddress = when (val addresses = getAddresses()) {
