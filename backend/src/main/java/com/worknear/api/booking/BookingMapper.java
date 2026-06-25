@@ -21,21 +21,28 @@ public class BookingMapper {
     private final UserRepository userRepository;
     private final BookingPhotoRepository photoRepository;
 
-    public BookingResponse toResponse(Booking b) {
+    public BookingResponse toResponse(Booking b, UUID viewerId) {
         String categoryName = categoryRepository.findById(b.getCategoryId())
                 .map(ServiceCategory::getName).orElse(null);
         String customerName = nameOf(b.getCustomerId());
         String proName = b.getProfessionalId() == null ? null : nameOf(b.getProfessionalId());
         List<BookingPhotoResponse> photos = photoRepository.findByBookingId(b.getId()).stream()
                 .map(BookingPhotoResponse::from).toList();
+        String completionOtp = b.getCustomerId().equals(viewerId)
+                && b.getStatus() == com.worknear.api.booking.domain.BookingStatus.COMPLETED_PENDING_OTP
+                ? b.getCompletionOtpCode()
+                : null;
 
         return new BookingResponse(
                 b.getId(), b.getCode(), b.getCustomerId(), b.getProfessionalId(), b.getCategoryId(),
                 categoryName, customerName, proName,
                 b.getScheduledDate(), b.getSlotStart(), b.getSlotEnd(),
                 b.getAddressLine(), b.getCity(), b.getLatitude(), b.getLongitude(),
-                b.getProblemDescription(), b.getStatus(), b.getAmount(), b.getCommission(), b.getProEarning(),
-                b.getPaymentMethod(), b.getConfirmedAt(), b.getCompletedAt(), b.getCreatedAt(), photos,
+                b.getProblemDescription(), b.getStatus(), displayStatus(b), b.getAmount(), b.getCommission(),
+                b.getProEarning(), b.getLockedAmount(), b.getPaymentMethod(), b.getConfirmedAt(),
+                b.getOnTheWayAt(), b.getArrivedAt(), b.getWorkStartedAt(), b.getWorkCompletedAt(),
+                b.getCompletedAt(), b.getPaymentReleasedAt(), completionOtp, b.getCompletionOtpExpiresAt(),
+                b.getCreatedAt(), photos,
                 b.getRescheduleCount(), RESCHEDULE_MAX,
                 canReschedule(b), canCancel(b));
     }
@@ -50,6 +57,20 @@ public class BookingMapper {
 
     private static boolean canCancel(Booking b) {
         return b.getStatus().canTransitionTo(com.worknear.api.booking.domain.BookingStatus.CANCELLED);
+    }
+
+    private static String displayStatus(Booking b) {
+        return switch (b.getStatus()) {
+            case PENDING -> "Assigned";
+            case CONFIRMED -> "Confirmed";
+            case ON_THE_WAY -> "On the way";
+            case ARRIVED -> "Arrived";
+            case IN_PROGRESS -> "Work started";
+            case COMPLETED_PENDING_OTP -> "Completion OTP pending";
+            case COMPLETED -> "Completed";
+            case CANCELLED -> "Cancelled";
+            case REJECTED -> "Rejected";
+        };
     }
 
     private String nameOf(UUID userId) {

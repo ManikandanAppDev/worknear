@@ -59,15 +59,44 @@ private fun styleFor(type: WorkNearAlertType): AlertStyle = when (type) {
 }
 
 /**
- * On-brand inline alert used across the app for validation and status messages
- * (invalid phone, invalid OTP, network issues, success states, etc.).
+ * On-brand inline alert. Pass a null [message] to hide (with animation when [animated] is true).
  */
 @Composable
 fun WorkNearAlert(
-    message: String,
+    message: String?,
     modifier: Modifier = Modifier,
     type: WorkNearAlertType = WorkNearAlertType.ERROR,
-    title: String? = null
+    title: String? = null,
+    animated: Boolean = true
+) {
+    val content: @Composable () -> Unit = {
+        WorkNearAlertContent(
+            message = message.orEmpty(),
+            modifier = modifier,
+            type = type,
+            title = title
+        )
+    }
+
+    if (animated) {
+        AnimatedVisibility(
+            visible = message != null,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            content()
+        }
+    } else if (message != null) {
+        content()
+    }
+}
+
+@Composable
+private fun WorkNearAlertContent(
+    message: String,
+    modifier: Modifier,
+    type: WorkNearAlertType,
+    title: String?
 ) {
     val style = styleFor(type)
     Row(
@@ -103,27 +132,5 @@ fun WorkNearAlert(
                 fontFamily = sansProText
             )
         }
-    }
-}
-
-/** Animated wrapper that shows/hides an alert based on a nullable message. */
-@Composable
-fun WorkNearAlert(
-    message: String?,
-    modifier: Modifier = Modifier,
-    type: WorkNearAlertType = WorkNearAlertType.ERROR,
-    title: String? = null
-) {
-    AnimatedVisibility(
-        visible = message != null,
-        enter = fadeIn() + expandVertically(),
-        exit = fadeOut() + shrinkVertically()
-    ) {
-        WorkNearAlert(
-            message = message.orEmpty(),
-            modifier = modifier,
-            type = type,
-            title = title
-        )
     }
 }

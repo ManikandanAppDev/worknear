@@ -166,6 +166,10 @@ data class RescheduleBookingBody(
     val slotEnd: String             // HH:mm
 )
 
+data class VerifyCompletionOtpBody(
+    val otp: String
+)
+
 data class BookingPhotoDto(
     val id: String? = null,
     val type: String? = null,
@@ -190,12 +194,21 @@ data class BookingDto(
     val longitude: Double? = null,
     val problemDescription: String? = null,
     val status: String? = null,
+    val displayStatus: String? = null,
     val amount: Double = 0.0,
     val commission: Double = 0.0,
     val proEarning: Double = 0.0,
+    val lockedAmount: Double = 0.0,
     val paymentMethod: String? = null,
     val confirmedAt: String? = null,
+    val onTheWayAt: String? = null,
+    val arrivedAt: String? = null,
+    val workStartedAt: String? = null,
+    val workCompletedAt: String? = null,
     val completedAt: String? = null,
+    val paymentReleasedAt: String? = null,
+    val completionOtp: String? = null,
+    val completionOtpExpiresAt: String? = null,
     val createdAt: String? = null,
     val photos: List<BookingPhotoDto> = emptyList(),
     val rescheduleCount: Int = 0,
@@ -234,4 +247,16 @@ data class AddressDto(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val isDefault: Boolean = false
+)
+
+data class AddressRequestBody(
+    val label: String? = null,
+    val line1: String,
+    val line2: String? = null,
+    val city: String? = null,
+    val state: String? = null,
+    val pincode: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val makeDefault: Boolean = false
 )

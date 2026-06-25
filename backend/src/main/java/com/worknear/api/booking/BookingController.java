@@ -8,6 +8,7 @@ import com.worknear.api.booking.dto.CancelPreviewResponse;
 import com.worknear.api.booking.dto.CreateBookingRequest;
 import com.worknear.api.booking.dto.RescheduleBookingRequest;
 import com.worknear.api.booking.dto.UpdateStatusRequest;
+import com.worknear.api.booking.dto.VerifyCompletionOtpRequest;
 import com.worknear.api.user.domain.Role;
 import com.worknear.api.common.web.ApiResponse;
 import com.worknear.api.common.web.PageResponse;
@@ -74,11 +75,44 @@ public class BookingController {
         return ApiResponse.ok(bookingService.reject(user.id(), bookingId, note));
     }
 
-    @Operation(summary = "Update job status (professional): ON_THE_WAY, IN_PROGRESS, COMPLETED")
+    @Operation(summary = "Update job status (professional): legacy endpoint")
     @PostMapping("/{bookingId}/status")
     public ApiResponse<BookingResponse> updateStatus(@CurrentUser UserPrincipal user, @PathVariable UUID bookingId,
                                                      @Valid @RequestBody UpdateStatusRequest request) {
         return ApiResponse.ok(bookingService.updateStatus(user.id(), bookingId, request.status(), request.note()));
+    }
+
+    @Operation(summary = "Mark job as on the way (professional)")
+    @PostMapping("/{bookingId}/on-the-way")
+    public ApiResponse<BookingResponse> onTheWay(@CurrentUser UserPrincipal user, @PathVariable UUID bookingId) {
+        return ApiResponse.ok(bookingService.markOnTheWay(user.id(), bookingId));
+    }
+
+    @Operation(summary = "Mark professional arrived (professional)")
+    @PostMapping("/{bookingId}/arrived")
+    public ApiResponse<BookingResponse> arrived(@CurrentUser UserPrincipal user, @PathVariable UUID bookingId) {
+        return ApiResponse.ok(bookingService.markArrived(user.id(), bookingId));
+    }
+
+    @Operation(summary = "Start work (professional)")
+    @PostMapping("/{bookingId}/start-work")
+    public ApiResponse<BookingResponse> startWork(@CurrentUser UserPrincipal user, @PathVariable UUID bookingId) {
+        return ApiResponse.ok(bookingService.startWork(user.id(), bookingId));
+    }
+
+    @Operation(summary = "Mark work completed and generate customer OTP (professional)")
+    @PostMapping("/{bookingId}/mark-work-completed")
+    public ApiResponse<BookingResponse> markWorkCompleted(@CurrentUser UserPrincipal user,
+                                                          @PathVariable UUID bookingId) {
+        return ApiResponse.ok(bookingService.markWorkCompleted(user.id(), bookingId));
+    }
+
+    @Operation(summary = "Verify customer completion OTP and release payment (professional)")
+    @PostMapping("/{bookingId}/verify-completion-otp")
+    public ApiResponse<BookingResponse> verifyCompletionOtp(@CurrentUser UserPrincipal user,
+                                                            @PathVariable UUID bookingId,
+                                                            @Valid @RequestBody VerifyCompletionOtpRequest request) {
+        return ApiResponse.ok(bookingService.verifyCompletionOtp(user.id(), bookingId, request.otp()));
     }
 
     @Operation(summary = "Preview cancellation fee and eligibility (customer)")

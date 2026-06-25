@@ -190,7 +190,9 @@ private fun StatusPill(status: BookingStatus) {
         BookingStatus.PENDING -> Triple(com.worknear.app.ui.theme.PromoBackground, PrimaryBlue, "Pending")
         BookingStatus.CONFIRMED -> Triple(SuccessGreenLight, SuccessGreen, "Confirmed")
         BookingStatus.ON_THE_WAY -> Triple(com.worknear.app.ui.theme.PromoBackground, PrimaryBlue, "On the way")
+        BookingStatus.ARRIVED -> Triple(com.worknear.app.ui.theme.PromoBackground, PrimaryBlue, "Arrived")
         BookingStatus.IN_PROGRESS -> Triple(com.worknear.app.ui.theme.WarningAmberLight, PrimaryBlue, "In progress")
+        BookingStatus.COMPLETED_PENDING_OTP -> Triple(com.worknear.app.ui.theme.WarningAmberLight, PrimaryBlue, "OTP pending")
         BookingStatus.COMPLETED -> Triple(SuccessGreenLight, SuccessGreen, "Completed")
         BookingStatus.CANCELLED -> Triple(Color(0xFFFEE2E2), Color(0xFFEF4444), "Cancelled")
     }

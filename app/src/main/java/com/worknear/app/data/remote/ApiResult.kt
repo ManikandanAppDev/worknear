@@ -42,21 +42,40 @@ suspend fun <T> safeCall(call: suspend () -> Response<ApiEnvelope<T>>): ApiResul
                 )
             }
         } else {
-            val raw = response.errorBody()?.string()
-            val parsed = raw?.let {
-                runCatching { errorGson.fromJson(it, ApiErrorEnvelope::class.java) }.getOrNull()
-            }
-            ApiResult.Error(
-                message = parsed?.message ?: defaultMessageFor(response.code()),
-                code = parsed?.code,
-                httpStatus = response.code()
-            )
+            errorFrom(response)
         }
     } catch (e: IOException) {
         ApiResult.Error("Can't reach the server. Check your connection and that the API is running.")
     } catch (e: Exception) {
         ApiResult.Error(e.message ?: "Something went wrong")
     }
+}
+
+/**
+ * Variant of [safeCall] for message-only endpoints (e.g. DELETE) whose successful response
+ * carries a null `data` field. Any 2xx is treated as success.
+ */
+suspend fun safeUnit(call: suspend () -> Response<ApiEnvelope<Unit>>): ApiResult<Unit> {
+    return try {
+        val response = call()
+        if (response.isSuccessful) ApiResult.Success(Unit) else errorFrom(response)
+    } catch (e: IOException) {
+        ApiResult.Error("Can't reach the server. Check your connection and that the API is running.")
+    } catch (e: Exception) {
+        ApiResult.Error(e.message ?: "Something went wrong")
+    }
+}
+
+private fun errorFrom(response: Response<*>): ApiResult.Error {
+    val raw = response.errorBody()?.string()
+    val parsed = raw?.let {
+        runCatching { errorGson.fromJson(it, ApiErrorEnvelope::class.java) }.getOrNull()
+    }
+    return ApiResult.Error(
+        message = parsed?.message ?: defaultMessageFor(response.code()),
+        code = parsed?.code,
+        httpStatus = response.code()
+    )
 }
 
 private fun defaultMessageFor(status: Int): String = when (status) {

@@ -10,5 +10,9 @@ import java.util.UUID;
 public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory, UUID> {
     List<ServiceCategory> findByActiveTrueOrderBySortOrderAsc();
 
+    List<ServiceCategory> findAllByOrderBySortOrderAscNameAsc();
+
     Optional<ServiceCategory> findBySlug(String slug);
+
+    boolean existsBySlug(String slug);
 }

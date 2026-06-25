@@ -56,4 +56,10 @@ public class ProfessionalProfile extends BaseEntity {
 
     @Column(name = "jobs_completed", nullable = false)
     private int jobsCompleted = 0;
+
+    @Column(name = "no_show_count", nullable = false)
+    private int noShowCount = 0;
+
+    @Column(nullable = false)
+    private boolean suspended = false;
 }

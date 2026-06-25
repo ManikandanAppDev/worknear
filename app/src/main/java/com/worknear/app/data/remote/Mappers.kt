@@ -113,6 +113,17 @@ fun BookingDto.toUiModel(): Booking = Booking(
         .joinToString(", "),
     price = amount.toInt(),
     status = mapBookingStatus(status),
+    displayStatus = displayStatus.orEmpty(),
+    lockedAmount = lockedAmount.toInt(),
+    completionOtp = completionOtp,
+    completionOtpExpiresAt = completionOtpExpiresAt,
+    confirmedAt = confirmedAt,
+    onTheWayAt = onTheWayAt,
+    arrivedAt = arrivedAt,
+    workStartedAt = workStartedAt,
+    workCompletedAt = workCompletedAt,
+    completedAt = completedAt,
+    paymentReleasedAt = paymentReleasedAt,
     imageRes = avatarFor(professionalId),
     rescheduleCount = rescheduleCount,
     rescheduleMax = rescheduleMax,
@@ -124,7 +135,9 @@ private fun mapBookingStatus(raw: String?): BookingStatus = when (raw?.uppercase
     "PENDING" -> BookingStatus.PENDING
     "CONFIRMED" -> BookingStatus.CONFIRMED
     "ON_THE_WAY" -> BookingStatus.ON_THE_WAY
+    "ARRIVED" -> BookingStatus.ARRIVED
     "IN_PROGRESS" -> BookingStatus.IN_PROGRESS
+    "COMPLETED_PENDING_OTP" -> BookingStatus.COMPLETED_PENDING_OTP
     "COMPLETED" -> BookingStatus.COMPLETED
     "CANCELLED", "CANCELED", "REJECTED" -> BookingStatus.CANCELLED
     else -> BookingStatus.CONFIRMED

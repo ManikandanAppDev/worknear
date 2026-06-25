@@ -9,6 +9,7 @@ import com.worknear.app.data.remote.dto.CancelBookingBody
 import com.worknear.app.data.remote.dto.CancelPreviewData
 import com.worknear.app.data.remote.dto.CreateBookingBody
 import com.worknear.app.data.remote.dto.RescheduleBookingBody
+import com.worknear.app.data.remote.dto.VerifyCompletionOtpBody
 import com.worknear.app.data.remote.safeCall
 import com.worknear.app.data.remote.toUiModel
 
@@ -60,6 +61,41 @@ class BookingRepository(private val api: WorkNearApi) {
     suspend fun customerBookings(tab: String): ApiResult<List<Booking>> {
         return when (val r = safeCall { api.customerBookings(tab = tab) }) {
             is ApiResult.Success -> ApiResult.Success(r.data.content.map { it.toUiModel() })
+            is ApiResult.Error -> r
+        }
+    }
+
+    /** tab: REQUESTS | ACTIVE | COMPLETED */
+    suspend fun professionalBookings(tab: String): ApiResult<List<Booking>> {
+        return when (val r = safeCall { api.professionalBookings(tab = tab) }) {
+            is ApiResult.Success -> ApiResult.Success(r.data.content.map { it.toUiModel() })
+            is ApiResult.Error -> r
+        }
+    }
+
+    suspend fun markOnTheWay(bookingId: String): ApiResult<Booking> =
+        mapBookingResult { api.markOnTheWay(bookingId) }
+
+    suspend fun acceptBooking(bookingId: String): ApiResult<Booking> =
+        mapBookingResult { api.acceptBooking(bookingId) }
+
+    suspend fun markArrived(bookingId: String): ApiResult<Booking> =
+        mapBookingResult { api.markArrived(bookingId) }
+
+    suspend fun startWork(bookingId: String): ApiResult<Booking> =
+        mapBookingResult { api.startWork(bookingId) }
+
+    suspend fun markWorkCompleted(bookingId: String): ApiResult<Booking> =
+        mapBookingResult { api.markWorkCompleted(bookingId) }
+
+    suspend fun verifyCompletionOtp(bookingId: String, otp: String): ApiResult<Booking> =
+        mapBookingResult { api.verifyCompletionOtp(bookingId, VerifyCompletionOtpBody(otp)) }
+
+    private suspend fun mapBookingResult(
+        call: suspend () -> retrofit2.Response<com.worknear.app.data.remote.dto.ApiEnvelope<BookingDto>>
+    ): ApiResult<Booking> {
+        return when (val r = safeCall { call() }) {
+            is ApiResult.Success -> ApiResult.Success(r.data.toUiModel())
             is ApiResult.Error -> r
         }
     }

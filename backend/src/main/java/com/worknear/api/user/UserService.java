@@ -1,5 +1,6 @@
 package com.worknear.api.user;
 
+import com.worknear.api.common.exception.BadRequestException;
 import com.worknear.api.common.exception.NotFoundException;
 import com.worknear.api.user.domain.CustomerAddress;
 import com.worknear.api.user.domain.User;
@@ -18,6 +19,9 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+    /** Maximum number of saved addresses a customer may keep. */
+    private static final int MAX_ADDRESSES = 3;
 
     private final UserRepository userRepository;
     private final CustomerAddressRepository addressRepository;
@@ -50,10 +54,15 @@ public class UserService {
 
     @Transactional
     public AddressResponse addAddress(UUID userId, AddressRequest request) {
+        List<CustomerAddress> existing = addressRepository.findByUserIdOrderByDefaultAddressDescCreatedAtDesc(userId);
+        if (existing.size() >= MAX_ADDRESSES) {
+            throw new BadRequestException("ADDRESS_LIMIT_REACHED",
+                    "You can save up to " + MAX_ADDRESSES + " addresses. Delete one to add a new address.");
+        }
         CustomerAddress address = new CustomerAddress();
         address.setUserId(userId);
         apply(address, request);
-        boolean firstAddress = addressRepository.findByUserIdOrderByDefaultAddressDescCreatedAtDesc(userId).isEmpty();
+        boolean firstAddress = existing.isEmpty();
         if (request.makeDefault() || firstAddress) {
             addressRepository.clearDefaultForUser(userId);
             address.setDefaultAddress(true);

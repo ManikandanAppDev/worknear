@@ -2,6 +2,7 @@ package com.worknear.api.catalog.dto;
 
 import com.worknear.api.catalog.domain.ServiceCategory;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public record CategoryResponse(
@@ -9,9 +10,10 @@ public record CategoryResponse(
         String slug,
         String name,
         String icon,
-        String color
+        String color,
+        BigDecimal basePrice
 ) {
     public static CategoryResponse from(ServiceCategory c) {
-        return new CategoryResponse(c.getId(), c.getSlug(), c.getName(), c.getIcon(), c.getColor());
+        return new CategoryResponse(c.getId(), c.getSlug(), c.getName(), c.getIcon(), c.getColor(), c.getBasePrice());
     }
 }

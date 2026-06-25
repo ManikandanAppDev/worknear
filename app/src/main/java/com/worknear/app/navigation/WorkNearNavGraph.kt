@@ -7,6 +7,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,17 +22,32 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.worknear.app.WorkNearApplication
 import com.worknear.app.ui.OnboardingScreen
+import com.worknear.app.ui.address.AddAddressScreen
+import com.worknear.app.ui.address.ManageAddressesScreen
 import com.worknear.app.ui.booking.BookServiceScreen
 import com.worknear.app.ui.booking.BookingConfirmedScreen
 import com.worknear.app.ui.bookings.BookingDetailScreen
 import com.worknear.app.ui.chat.ChatDetailScreen
 import com.worknear.app.ui.login.LoginScreen
 import com.worknear.app.ui.main.MainScreen
+import com.worknear.app.ui.onboarding.CompleteProfileScreen
 import com.worknear.app.ui.professional.ProfessionalProfileScreen
 import com.worknear.app.ui.components.OfflineBanner
 import com.worknear.app.ui.servicelist.ServiceListScreen
+import com.worknear.app.ui.serviceflow.AllServicesScreen
+import com.worknear.app.ui.serviceflow.BestMatchesScreen
+import com.worknear.app.ui.serviceflow.BookingSuccessScreen
+import com.worknear.app.ui.serviceflow.CompletionScreen
+import com.worknear.app.ui.serviceflow.ConfigureScreen
+import com.worknear.app.ui.serviceflow.ConfirmBookingScreen
+import com.worknear.app.ui.serviceflow.JobStatusScreen
+import com.worknear.app.ui.serviceflow.ScheduleBookingScreen
+import com.worknear.app.ui.serviceflow.ServiceBuilderScreen
 import com.worknear.app.ui.theme.PrimaryBlue
 import com.worknear.app.utils.rememberIsOnline
+import kotlinx.coroutines.withTimeoutOrNull
+
+private const val PROFILE_GATE_TIMEOUT_MS = 4000L
 
 @Composable
 fun WorkNearNavGraph(
@@ -39,9 +57,39 @@ fun WorkNearNavGraph(
     val app = context.applicationContext as WorkNearApplication
     val loggedIn by app.container.tokenStore.isLoggedIn.collectAsStateWithLifecycle(initialValue = null)
 
-    // Wait until we know whether a session exists, then pick the entry point.
     val sessionState = loggedIn
-    if (sessionState == null) {
+
+    // Onboarding gate: a logged-in customer must have a name + at least one saved address.
+    // Re-checked on every (re)launch, so closing the app mid-onboarding re-prompts on reopen.
+    // Default false so the NavHost is never torn down mid-session (e.g. the login transition).
+    var needsProfile by remember { mutableStateOf(false) }
+    // Becomes true once we've resolved the initial entry point (used only to hold the splash).
+    var startResolved by remember { mutableStateOf(false) }
+    // Guards against a stale needsOnboarding() result overwriting a just-completed profile.
+    var profileJustCompleted by remember { mutableStateOf(false) }
+
+    LaunchedEffect(sessionState) {
+        when (sessionState) {
+            null -> return@LaunchedEffect
+            true -> {
+                // Bound the splash: if the server is slow/unreachable we proceed to the app
+                // instead of hanging on the spinner. The redirect effect still catches an
+                // incomplete profile once a later check succeeds.
+                val result = withTimeoutOrNull(PROFILE_GATE_TIMEOUT_MS) {
+                    app.container.accountRepository.needsOnboarding()
+                }
+                if (result != null && !profileJustCompleted) needsProfile = result
+            }
+            false -> {
+                profileJustCompleted = false
+                needsProfile = false
+            }
+        }
+        startResolved = true
+    }
+
+    // Hold a splash until we know the session state and, for logged-in users, the entry point.
+    if (sessionState == null || !startResolved) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = PrimaryBlue)
         }
@@ -60,6 +108,17 @@ fun WorkNearNavGraph(
         }
     }
 
+    // Catch logged-in-but-incomplete users who land on Main (e.g. existing account with no address).
+    LaunchedEffect(needsProfile, sessionState) {
+        if (sessionState == true && needsProfile && !profileJustCompleted &&
+            navController.currentDestination?.route == Screen.Main.route
+        ) {
+            navController.navigate(Screen.CompleteProfile.route) {
+                popUpTo(Screen.Main.route) { inclusive = true }
+            }
+        }
+    }
+
     val isOnline by rememberIsOnline()
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -68,7 +127,11 @@ fun WorkNearNavGraph(
         NavHost(
             modifier = Modifier.weight(1f),
             navController = navController,
-            startDestination = if (sessionState) Screen.Main.route else Screen.Onboarding.route
+            startDestination = when {
+                sessionState != true -> Screen.Onboarding.route
+                needsProfile -> Screen.CompleteProfile.route
+                else -> Screen.Main.route
+            }
         ) {
         composable(Screen.Onboarding.route) {
             OnboardingScreen(
@@ -79,9 +142,22 @@ fun WorkNearNavGraph(
         composable(Screen.Login.route) {
             LoginScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToHome = {
-                    navController.navigate(Screen.Main.route) {
+                onLoginSuccess = { newUser ->
+                    val destination = if (newUser) Screen.CompleteProfile.route else Screen.Main.route
+                    navController.navigate(destination) {
                         popUpTo(Screen.Onboarding.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.CompleteProfile.route) {
+            CompleteProfileScreen(
+                onCompleted = {
+                    profileJustCompleted = true
+                    needsProfile = false
+                    navController.navigate(Screen.Main.route) {
+                        popUpTo(0) { inclusive = true }
                     }
                 }
             )
@@ -91,6 +167,18 @@ fun WorkNearNavGraph(
             MainScreen(
                 onNavigateToServiceList = { categoryId ->
                     navController.navigate(Screen.ServiceList.createRoute(categoryId))
+                },
+                onNavigateToServiceBuilder = { categoryId ->
+                    navController.navigate(Screen.ServiceBuilder.createRoute(categoryId))
+                },
+                onNavigateToAllServices = {
+                    navController.navigate(Screen.AllServices.route)
+                },
+                onNavigateToAddAddress = {
+                    navController.navigate(Screen.AddAddress.createRoute())
+                },
+                onNavigateToManageAddresses = {
+                    navController.navigate(Screen.ManageAddresses.route)
                 },
                 onNavigateToProfessional = { professionalId ->
                     navController.navigate(Screen.ProfessionalProfile.createRoute(professionalId))
@@ -125,6 +213,107 @@ fun WorkNearNavGraph(
                 },
                 onBookNow = { id ->
                     navController.navigate(Screen.BookService.createRoute(id))
+                }
+            )
+        }
+
+        composable(
+            route = Screen.ServiceBuilder.route,
+            arguments = listOf(navArgument(NavArgs.CATEGORY_ID) { type = NavType.StringType })
+        ) { backStackEntry ->
+            val categoryId = backStackEntry.arguments?.getString(NavArgs.CATEGORY_ID) ?: "electrician"
+            ServiceBuilderScreen(
+                categoryId = categoryId,
+                onNavigateBack = { navController.popBackStack() },
+                onConfigure = { navController.navigate(Screen.Configure.route) }
+            )
+        }
+
+        composable(Screen.AllServices.route) {
+            AllServicesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onOpenService = { categoryId ->
+                    navController.navigate(Screen.ServiceBuilder.createRoute(categoryId))
+                }
+            )
+        }
+
+        composable(Screen.ManageAddresses.route) {
+            ManageAddressesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onEditAddress = { addressId ->
+                    navController.navigate(Screen.AddAddress.createRoute(addressId))
+                },
+                onAddNew = { navController.navigate(Screen.AddAddress.createRoute()) }
+            )
+        }
+
+        composable(
+            route = Screen.AddAddress.route,
+            arguments = listOf(navArgument(NavArgs.ADDRESS_ID) {
+                type = NavType.StringType
+                defaultValue = ""
+            })
+        ) { backStackEntry ->
+            val addressId = backStackEntry.arguments?.getString(NavArgs.ADDRESS_ID)?.takeIf { it.isNotBlank() }
+            AddAddressScreen(
+                addressId = addressId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Configure.route) {
+            ConfigureScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onSeeMatches = { navController.navigate(Screen.BestMatches.route) }
+            )
+        }
+
+        composable(Screen.BestMatches.route) {
+            BestMatchesScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onContinue = { navController.navigate(Screen.Schedule.route) }
+            )
+        }
+
+        composable(Screen.Schedule.route) {
+            ScheduleBookingScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onContinue = { navController.navigate(Screen.ConfirmBooking.route) },
+                onAddAddress = { navController.navigate(Screen.AddAddress.createRoute()) }
+            )
+        }
+
+        composable(Screen.ConfirmBooking.route) {
+            ConfirmBookingScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onConfirm = { navController.navigate(Screen.BookingSuccess.route) }
+            )
+        }
+
+        composable(Screen.BookingSuccess.route) {
+            BookingSuccessScreen(
+                onBackToHome = {
+                    navController.navigate(Screen.Main.route) {
+                        popUpTo(Screen.Main.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.JobStatusFlow.route) {
+            JobStatusScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onConfirmCompletion = { navController.navigate(Screen.Completion.route) }
+            )
+        }
+
+        composable(Screen.Completion.route) {
+            CompletionScreen(
+                onDone = {
+                    navController.navigate(Screen.Main.route) {
+                        popUpTo(Screen.Main.route) { inclusive = true }
+                    }
                 }
             )
         }

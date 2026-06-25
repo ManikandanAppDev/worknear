@@ -7,6 +7,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @Entity
@@ -27,4 +29,8 @@ public class ServiceCategory extends BaseEntity {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    /** Platform reference/starting price for the category, managed from the admin dashboard. */
+    @Column(name = "base_price", nullable = false)
+    private BigDecimal basePrice = BigDecimal.ZERO;
 }

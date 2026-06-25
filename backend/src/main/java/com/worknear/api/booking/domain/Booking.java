@@ -66,6 +66,9 @@ public class Booking extends BaseEntity {
     @Column(name = "pro_earning", nullable = false)
     private BigDecimal proEarning = BigDecimal.ZERO;
 
+    @Column(name = "locked_amount", nullable = false)
+    private BigDecimal lockedAmount = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method")
     private PaymentMethod paymentMethod;
@@ -91,9 +94,36 @@ public class Booking extends BaseEntity {
     @Column(name = "cancelled_at")
     private Instant cancelledAt;
 
+    @Column(name = "no_show_at")
+    private Instant noShowAt;
+
     @Column(name = "confirmed_at")
     private Instant confirmedAt;
 
+    @Column(name = "on_the_way_at")
+    private Instant onTheWayAt;
+
+    @Column(name = "arrived_at")
+    private Instant arrivedAt;
+
+    @Column(name = "work_started_at")
+    private Instant workStartedAt;
+
+    @Column(name = "work_completed_at")
+    private Instant workCompletedAt;
+
     @Column(name = "completed_at")
     private Instant completedAt;
+
+    @Column(name = "payment_released_at")
+    private Instant paymentReleasedAt;
+
+    @Column(name = "completion_otp_code")
+    private String completionOtpCode;
+
+    @Column(name = "completion_otp_hash")
+    private String completionOtpHash;
+
+    @Column(name = "completion_otp_expires_at")
+    private Instant completionOtpExpiresAt;
 }

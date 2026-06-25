@@ -1,7 +1,7 @@
 package com.worknear.app.ui.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,46 +14,49 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.worknear.app.R
+import com.worknear.app.data.model.Booking
+import com.worknear.app.data.model.BookingStatus
+import com.worknear.app.data.model.HomeServiceTile
+import com.worknear.app.data.model.ServiceCatalog
 import com.worknear.app.di.AppViewModelProvider
-import com.worknear.app.data.model.Professional
-import com.worknear.app.data.model.ServiceCategory
+import com.worknear.app.ui.address.AddressStore
+import com.worknear.app.ui.address.SelectAddressSheetContent
+import com.worknear.app.ui.components.IconTile
 import com.worknear.app.ui.theme.Background
 import com.worknear.app.ui.theme.BorderGray
 import com.worknear.app.ui.theme.CardColor
@@ -61,20 +64,48 @@ import com.worknear.app.ui.theme.DarkText
 import com.worknear.app.ui.theme.LightGray
 import com.worknear.app.ui.theme.MediumGray
 import com.worknear.app.ui.theme.PrimaryBlue
-import com.worknear.app.ui.theme.PromoBackground
-import com.worknear.app.ui.theme.StarYellow
+import com.worknear.app.ui.theme.SuccessGreen
+import com.worknear.app.ui.theme.WarningAmber
 import com.worknear.app.ui.theme.sansProText
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeTabContent(
     modifier: Modifier = Modifier,
-    onSeeAllCategories: () -> Unit,
-    onCategoryClick: (ServiceCategory) -> Unit,
-    onBookNow: () -> Unit,
-    onProfessionalClick: (Professional) -> Unit,
+    onServiceTileClick: (String) -> Unit,
+    onSeeAllServices: () -> Unit,
+    onRecentBookingClick: () -> Unit,
+    onNavigateToAddAddress: () -> Unit = {},
+    onNavigateToManageAddresses: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showAddressSheet by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) { AddressStore.refresh() }
+
+    if (showAddressSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showAddressSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = CardColor
+        ) {
+            SelectAddressSheetContent(
+                onSelect = {
+                    AddressStore.select(it)
+                    showAddressSheet = false
+                },
+                onAddNew = {
+                    showAddressSheet = false
+                    onNavigateToAddAddress()
+                },
+                onManage = {
+                    showAddressSheet = false
+                    onNavigateToManageAddresses()
+                }
+            )
+        }
+    }
 
     LazyColumn(
         modifier = modifier
@@ -83,292 +114,393 @@ fun HomeTabContent(
     ) {
         item {
             HomeTopBar(
-                userName = uiState.userName,
-                location = uiState.location
+                address = AddressStore.selected?.display ?: "Add your address",
+                onAddressClick = { showAddressSheet = true }
             )
         }
 
         item {
-            HomeSearchBar(
-                searchQuery = uiState.searchQuery,
-                onSearchQueryChange = viewModel::onSearchQueryChange,
+            Text(
+                "Hi, find a pro",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkText,
+                fontFamily = sansProText,
+                modifier = Modifier.padding(horizontal = 20.dp)
+            )
+            Spacer(Modifier.height(14.dp))
+        }
+
+        item { HomeSearchBar(modifier = Modifier.padding(horizontal = 20.dp)) }
+
+        item {
+            Spacer(Modifier.height(24.dp))
+            SectionHeader(title = "Popular Services", onSeeAll = onSeeAllServices)
+            Spacer(Modifier.height(16.dp))
+            PopularServicesGrid(
+                tiles = ServiceCatalog.homeTiles,
+                onTileClick = onServiceTileClick,
                 modifier = Modifier.padding(horizontal = 20.dp)
             )
         }
 
         item {
-            Spacer(modifier = Modifier.height(24.dp))
-            CategoriesSection(
-                categories = uiState.categories,
-                onSeeAll = onSeeAllCategories,
-                onCategoryClick = onCategoryClick,
-                modifier = Modifier.padding(horizontal = 20.dp)
-            )
+            Spacer(Modifier.height(24.dp))
+            ThreeStepsPromo(modifier = Modifier.padding(horizontal = 20.dp))
         }
 
         item {
-            Spacer(modifier = Modifier.height(24.dp))
-            PromoBanner(
-                onBookNow = onBookNow,
-                modifier = Modifier.padding(horizontal = 20.dp)
-            )
+            Spacer(Modifier.height(24.dp))
+            SectionHeader(title = "Recent Bookings", onSeeAll = onRecentBookingClick)
+            Spacer(Modifier.height(12.dp))
+            when {
+                uiState.bookingsLoading -> RecentBookingLoading(modifier = Modifier.padding(horizontal = 20.dp))
+                uiState.recentBookings.isEmpty() -> RecentBookingEmptyState(
+                    onBook = onSeeAllServices,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+                else -> RecentBookingCard(
+                    booking = uiState.recentBookings.first(),
+                    onClick = onRecentBookingClick,
+                    modifier = Modifier.padding(horizontal = 20.dp)
+                )
+            }
         }
 
         item {
-            Spacer(modifier = Modifier.height(24.dp))
-            PopularProfessionalsSection(
-                professionals = uiState.professionals,
-                onProfessionalClick = onProfessionalClick,
-                modifier = Modifier.padding(horizontal = 20.dp)
-            )
+            Spacer(Modifier.height(24.dp))
+            TrustStrip(modifier = Modifier.padding(horizontal = 20.dp))
+            Spacer(Modifier.height(24.dp))
         }
-
-        item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
 
 @Composable
-private fun HomeTopBar(userName: String, location: String) {
+private fun HomeTopBar(address: String, onAddressClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = {}) {
-            Icon(Icons.Default.Menu, "Menu", tint = DarkText)
-        }
-
-        Column(
-            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .widthIn(max = 240.dp)
+                .clip(RoundedCornerShape(50))
+                .background(CardColor)
+                .border(1.dp, BorderGray, RoundedCornerShape(50))
+                .clickable(onClick = onAddressClick)
+                .padding(start = 12.dp, end = 8.dp, top = 7.dp, bottom = 7.dp)
         ) {
+            Icon(Icons.Default.LocationOn, null, tint = PrimaryBlue, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
-                text = stringResource(R.string.hello_user, userName),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
+                address,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
                 color = DarkText,
-                fontFamily = sansProText
+                fontFamily = sansProText,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.LocationOn, null, tint = MediumGray, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(location, fontSize = 13.sp, color = MediumGray, fontFamily = sansProText)
-            }
+            Icon(Icons.Default.ArrowDropDown, null, tint = MediumGray, modifier = Modifier.size(18.dp))
         }
 
-        IconButton(onClick = {}) {
-            Icon(Icons.Default.Notifications, "Notifications", tint = DarkText)
-        }
-    }
-}
-
-@Composable
-private fun HomeSearchBar(
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            modifier = Modifier.weight(1f),
-            placeholder = {
-                Text(stringResource(R.string.search_service), color = LightGray, fontFamily = sansProText)
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(topStart = 14.dp, bottomStart = 14.dp, topEnd = 0.dp, bottomEnd = 0.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = BorderGray,
-                unfocusedBorderColor = BorderGray,
-                focusedContainerColor = CardColor,
-                unfocusedContainerColor = CardColor
-            ),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-            textStyle = androidx.compose.ui.text.TextStyle(fontFamily = sansProText)
-        )
+        Spacer(Modifier.weight(1f))
 
         Box(
             modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(topEnd = 14.dp, bottomEnd = 14.dp))
-                .background(PrimaryBlue)
-                .clickable {},
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(CardColor)
+                .border(1.dp, BorderGray, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Default.Search, "Search", tint = Color.White)
+            Icon(Icons.Default.Notifications, "Notifications", tint = DarkText, modifier = Modifier.size(20.dp))
         }
     }
 }
 
 @Composable
-private fun CategoriesSection(
-    categories: List<ServiceCategory>,
-    onSeeAll: () -> Unit,
-    onCategoryClick: (ServiceCategory) -> Unit,
+private fun HomeSearchBar(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(CardColor)
+            .border(1.dp, BorderGray, RoundedCornerShape(16.dp))
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.Search, null, tint = MediumGray, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.width(10.dp))
+        Text(
+            "Search for a service...",
+            color = LightGray,
+            fontSize = 14.sp,
+            fontFamily = sansProText,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(Icons.Default.KeyboardVoice, null, tint = PrimaryBlue, modifier = Modifier.size(20.dp))
+    }
+}
+
+@Composable
+private fun SectionHeader(title: String, onSeeAll: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = DarkText, fontFamily = sansProText)
+        Text(
+            "See all",
+            modifier = Modifier.clickable(onClick = onSeeAll),
+            color = PrimaryBlue,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            fontFamily = sansProText
+        )
+    }
+}
+
+@Composable
+private fun PopularServicesGrid(
+    tiles: List<HomeServiceTile>,
+    onTileClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                stringResource(R.string.categories),
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = DarkText,
-                fontFamily = sansProText
-            )
-            Text(
-                stringResource(R.string.see_all),
-                modifier = Modifier.clickable(onClick = onSeeAll),
-                color = PrimaryBlue,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = sansProText
-            )
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            items(categories, key = { it.id }) { category ->
-                CategoryItem(category = category, onClick = { onCategoryClick(category) })
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        tiles.chunked(4).forEach { rowTiles ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                rowTiles.forEach { tile ->
+                    ServiceTileItem(
+                        tile = tile,
+                        onClick = { onTileClick(tile.categoryId) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                repeat(4 - rowTiles.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
 }
 
 @Composable
-private fun CategoryItem(category: ServiceCategory, onClick: () -> Unit) {
+private fun ServiceTileItem(
+    tile: HomeServiceTile,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick)
+        modifier = modifier.clickable(onClick = onClick),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Image(
-            painter = painterResource(category.imageRes),
-            contentDescription = category.title,
-            modifier = Modifier.size(72.dp).clip(RoundedCornerShape(16.dp)),
-            contentScale = ContentScale.Crop
-        )
+        IconTile(iconRes = tile.iconRes, tileSize = 58.dp, iconSize = 28.dp, cornerRadius = 18.dp)
         Spacer(Modifier.height(8.dp))
-        Text(category.title, fontSize = 13.sp, color = DarkText, fontFamily = sansProText)
+        Text(
+            tile.label,
+            fontSize = 12.sp,
+            color = DarkText,
+            fontFamily = sansProText,
+            textAlign = TextAlign.Center,
+            lineHeight = 14.sp
+        )
     }
 }
 
 @Composable
-private fun PromoBanner(onBookNow: () -> Unit, modifier: Modifier = Modifier) {
-    Box(
+private fun ThreeStepsPromo(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(PrimaryBlue.copy(alpha = 0.08f))
+            .padding(18.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                "Book a trusted pro\nin 3 easy steps",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkText,
+                fontFamily = sansProText,
+                lineHeight = 22.sp
+            )
+            Spacer(Modifier.height(12.dp))
+            listOf("Choose a service", "Select best pro", "Relax & book").forEach { step ->
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 3.dp)) {
+                    Box(
+                        modifier = Modifier.size(18.dp).clip(CircleShape).background(PrimaryBlue),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Check, null, tint = Color.White, modifier = Modifier.size(12.dp))
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(step, fontSize = 13.sp, color = MediumGray, fontFamily = sansProText)
+                }
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        IconTile(
+            iconRes = R.drawable.ic_wn_professional,
+            tileSize = 76.dp,
+            iconSize = 40.dp,
+            cornerRadius = 22.dp,
+            background = PrimaryBlue.copy(alpha = 0.16f)
+        )
+    }
+}
+
+@Composable
+private fun RecentBookingCard(booking: Booking, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val (badgeText, badgeColor) = bookingStatusBadge(booking)
+    Row(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(PromoBackground)
+            .background(CardColor)
+            .border(1.dp, BorderGray, RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    stringResource(R.string.promo_title),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkText,
-                    fontFamily = sansProText,
-                    lineHeight = 22.sp
-                )
-                Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = onBookNow,
-                    modifier = Modifier.width(120.dp).height(40.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-                ) {
-                    Text(
-                        stringResource(R.string.book_now),
-                        color = Color.White,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        fontFamily = sansProText
-                    )
-                }
-            }
-            Image(
-                painter = painterResource(R.drawable.avatar_five),
-                contentDescription = null,
-                modifier = Modifier.size(100.dp).clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
+        IconTile(iconRes = R.drawable.ic_wn_receipt, tileSize = 48.dp, iconSize = 24.dp)
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(booking.serviceName, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DarkText, fontFamily = sansProText)
+            Spacer(Modifier.height(2.dp))
+            Text(
+                "${booking.professionalName} · ${booking.date}, ${booking.time}",
+                fontSize = 12.sp,
+                color = MediumGray,
+                fontFamily = sansProText
             )
         }
+        StatusBadge(text = badgeText, color = badgeColor)
     }
 }
 
 @Composable
-private fun PopularProfessionalsSection(
-    professionals: List<Professional>,
-    onProfessionalClick: (Professional) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            stringResource(R.string.popular_professionals),
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = DarkText,
-            fontFamily = sansProText
+private fun bookingStatusBadge(booking: Booking): Pair<String, Color> = when (booking.status) {
+    BookingStatus.PENDING -> "Pending" to PrimaryBlue
+    BookingStatus.CONFIRMED -> "Confirmed" to SuccessGreen
+    BookingStatus.ON_THE_WAY -> "On the way" to WarningAmber
+    BookingStatus.ARRIVED -> "Arrived" to WarningAmber
+    BookingStatus.IN_PROGRESS -> "In progress" to PrimaryBlue
+    BookingStatus.COMPLETED_PENDING_OTP -> "Confirm OTP" to WarningAmber
+    BookingStatus.COMPLETED -> "Completed" to SuccessGreen
+    BookingStatus.CANCELLED -> "Cancelled" to MediumGray
+}
+
+@Composable
+private fun RecentBookingEmptyState(onBook: () -> Unit, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(CardColor)
+            .border(1.dp, BorderGray, RoundedCornerShape(16.dp))
+            .padding(vertical = 28.dp, horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        IconTile(
+            iconRes = R.drawable.ic_wn_calendar,
+            tileSize = 64.dp,
+            iconSize = 32.dp,
+            cornerRadius = 20.dp,
+            background = PrimaryBlue.copy(alpha = 0.10f)
         )
-        Spacer(Modifier.height(16.dp))
-        professionals.forEach { professional ->
-            ProfessionalCard(professional = professional, onClick = { onProfessionalClick(professional) })
-            Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
+        Text("No bookings yet", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkText, fontFamily = sansProText)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Book a service and track it here.",
+            fontSize = 13.sp,
+            color = MediumGray,
+            fontFamily = sansProText,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(18.dp))
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(50))
+                .background(PrimaryBlue)
+                .clickable(onClick = onBook)
+                .padding(horizontal = 28.dp, vertical = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("Book a Service", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, fontFamily = sansProText)
         }
     }
 }
 
 @Composable
-private fun ProfessionalCard(professional: Professional, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = CardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+private fun RecentBookingLoading(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(96.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(CardColor)
+            .border(1.dp, BorderGray, RoundedCornerShape(16.dp)),
+        contentAlignment = Alignment.Center
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Image(
-                painter = painterResource(professional.imageRes),
-                contentDescription = professional.name,
-                modifier = Modifier.size(72.dp).clip(RoundedCornerShape(12.dp)),
-                contentScale = ContentScale.Crop
-            )
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(professional.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = DarkText, fontFamily = sansProText)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Star, null, tint = StarYellow, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        stringResource(R.string.rating_format, professional.rating.toString(), professional.reviewCount),
-                        fontSize = 13.sp,
-                        color = MediumGray,
-                        fontFamily = sansProText
-                    )
-                }
-                Text(professional.profession, fontSize = 13.sp, color = MediumGray, fontFamily = sansProText)
-                Text(
-                    stringResource(R.string.starts_from, professional.startingPrice),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkText,
-                    fontFamily = sansProText
-                )
-            }
-            Icon(Icons.Default.ChevronRight, null, tint = MediumGray)
-        }
+        CircularProgressIndicator(color = PrimaryBlue, modifier = Modifier.size(24.dp))
+    }
+}
+
+@Composable
+private fun StatusBadge(text: String, color: Color) {
+    Text(
+        text,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = color,
+        fontFamily = sansProText,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(color.copy(alpha = 0.12f))
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    )
+}
+
+@Composable
+private fun TrustStrip(modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(CardColor)
+            .border(1.dp, BorderGray, RoundedCornerShape(16.dp))
+            .padding(vertical = 16.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        TrustItem(R.drawable.ic_wn_verified, "Verified\nPros")
+        TrustItem(R.drawable.ic_wn_pricing, "Transparent\nPricing")
+        TrustItem(R.drawable.ic_wn_lock, "Secure\nPayments")
+        TrustItem(R.drawable.ic_wn_support, "Support\n24/7")
+    }
+}
+
+@Composable
+private fun TrustItem(iconRes: Int, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        IconTile(iconRes = iconRes, tileSize = 44.dp, iconSize = 22.dp, cornerRadius = 14.dp)
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label,
+            fontSize = 11.sp,
+            color = MediumGray,
+            fontFamily = sansProText,
+            textAlign = TextAlign.Center,
+            lineHeight = 13.sp
+        )
     }
 }

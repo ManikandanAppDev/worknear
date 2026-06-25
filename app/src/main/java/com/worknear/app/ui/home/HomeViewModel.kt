@@ -2,10 +2,12 @@ package com.worknear.app.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.worknear.app.data.model.Booking
 import com.worknear.app.data.model.Professional
 import com.worknear.app.data.model.ServiceCategory
 import com.worknear.app.data.remote.ApiResult
 import com.worknear.app.data.repository.AccountRepository
+import com.worknear.app.data.repository.BookingRepository
 import com.worknear.app.data.repository.CatalogRepository
 import com.worknear.app.data.repository.ProfessionalRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +22,8 @@ data class HomeUiState(
     val searchQuery: String = "",
     val categories: List<ServiceCategory> = emptyList(),
     val professionals: List<Professional> = emptyList(),
+    val recentBookings: List<Booking> = emptyList(),
+    val bookingsLoading: Boolean = true,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
@@ -27,7 +31,8 @@ data class HomeUiState(
 class HomeViewModel(
     private val catalogRepository: CatalogRepository,
     private val professionalRepository: ProfessionalRepository,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val bookingRepository: BookingRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -35,10 +40,23 @@ class HomeViewModel(
 
     init {
         loadHomeData()
+        loadRecentBookings()
     }
 
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
+    }
+
+    /** Loads the most recent upcoming bookings for the Recent Bookings tile (best-effort). */
+    fun loadRecentBookings() {
+        _uiState.update { it.copy(bookingsLoading = true) }
+        viewModelScope.launch {
+            val recent = when (val result = bookingRepository.customerBookings("UPCOMING")) {
+                is ApiResult.Success -> result.data
+                is ApiResult.Error -> emptyList()
+            }
+            _uiState.update { it.copy(recentBookings = recent, bookingsLoading = false) }
+        }
     }
 
     fun loadHomeData() {

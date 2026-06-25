@@ -37,6 +37,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
@@ -44,6 +47,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
 
@@ -57,6 +61,7 @@ public class BookingService {
     private static final int FREE_LATE_CANCELS_PER_MONTH = 3;
     private static final int EARLY_CANCEL_HOURS = 24;
     private static final BigDecimal LATE_CANCEL_FEE = new BigDecimal("50.00");
+    private static final Duration COMPLETION_OTP_TTL = Duration.ofHours(2);
 
     /** Authoritative timezone for all booking date/time validation (ignores the device clock). */
     private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Kolkata");
@@ -65,7 +70,8 @@ public class BookingService {
     /** Statuses that count as an "active" booking for duplicate-prevention. */
     private static final List<BookingStatus> ACTIVE_STATUSES = List.of(
             BookingStatus.PENDING, BookingStatus.CONFIRMED,
-            BookingStatus.ON_THE_WAY, BookingStatus.IN_PROGRESS);
+            BookingStatus.ON_THE_WAY, BookingStatus.ARRIVED,
+            BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED_PENDING_OTP);
 
     private final BookingRepository bookingRepository;
     private final BookingPhotoRepository photoRepository;
@@ -126,21 +132,24 @@ public class BookingService {
         booking.setAmount(amount);
         booking.setCommission(commission);
         booking.setProEarning(amount.subtract(commission));
+        booking.setLockedAmount(amount);
         booking.setPaymentMethod(req.paymentMethod());
+        walletService.debit(customerId, amount, TransactionReason.BOOKING_PAYMENT,
+                null, "Locked amount for booking " + booking.getCode());
         booking = bookingRepository.save(booking);
 
         recordHistory(booking, BookingStatus.PENDING, "Booking created", customerId);
         notificationService.notifyUser(req.professionalId(), "BOOKING_REQUEST",
                 "New job request", "You have a new booking request " + booking.getCode());
 
-        return mapper.toResponse(booking);
+        return mapper.toResponse(booking, customerId);
     }
 
     @Transactional(readOnly = true)
     public BookingResponse get(UUID userId, UUID bookingId) {
         Booking booking = require(bookingId);
         assertParticipant(userId, booking);
-        return mapper.toResponse(booking);
+        return mapper.toResponse(booking, userId);
     }
 
     @Transactional(readOnly = true)
@@ -149,7 +158,7 @@ public class BookingService {
         var page = statuses == null
                 ? bookingRepository.findByCustomerId(customerId, pageable)
                 : bookingRepository.findByCustomerIdAndStatusIn(customerId, statuses, pageable);
-        return PageResponse.from(page, mapper::toResponse);
+        return PageResponse.from(page, booking -> mapper.toResponse(booking, customerId));
     }
 
     @Transactional(readOnly = true)
@@ -158,7 +167,7 @@ public class BookingService {
         var page = statuses == null
                 ? bookingRepository.findByProfessionalId(proId, pageable)
                 : bookingRepository.findByProfessionalIdAndStatusIn(proId, statuses, pageable);
-        return PageResponse.from(page, mapper::toResponse);
+        return PageResponse.from(page, booking -> mapper.toResponse(booking, proId));
     }
 
     @Transactional
@@ -170,7 +179,7 @@ public class BookingService {
         ensureChatThread(booking);
         notificationService.notifyUser(booking.getCustomerId(), "BOOKING_CONFIRMED",
                 "Booking confirmed", "Your booking " + booking.getCode() + " was accepted");
-        return mapper.toResponse(booking);
+        return mapper.toResponse(booking, proId);
     }
 
     @Transactional
@@ -180,7 +189,7 @@ public class BookingService {
         transition(booking, BookingStatus.REJECTED, proId, note);
         notificationService.notifyUser(booking.getCustomerId(), "BOOKING_REJECTED",
                 "Booking declined", "Your booking " + booking.getCode() + " was declined");
-        return mapper.toResponse(booking);
+        return mapper.toResponse(booking, proId);
     }
 
     @Transactional
@@ -190,13 +199,87 @@ public class BookingService {
         if (target == BookingStatus.REJECTED || target == BookingStatus.CONFIRMED || target == BookingStatus.CANCELLED) {
             throw new BadRequestException("Use the dedicated accept/reject/cancel endpoints for this transition");
         }
-        transition(booking, target, proId, note);
-        if (target == BookingStatus.COMPLETED) {
-            completeBooking(booking);
+        if (target == BookingStatus.ON_THE_WAY) {
+            return markOnTheWay(proId, bookingId);
         }
+        if (target == BookingStatus.ARRIVED) {
+            return markArrived(proId, bookingId);
+        }
+        if (target == BookingStatus.IN_PROGRESS) {
+            return startWork(proId, bookingId);
+        }
+        if (target == BookingStatus.COMPLETED_PENDING_OTP) {
+            return markWorkCompleted(proId, bookingId);
+        }
+        throw new BadRequestException("Use the dedicated status endpoints for this transition");
+    }
+
+    @Transactional
+    public BookingResponse markOnTheWay(UUID proId, UUID bookingId) {
+        Booking booking = require(bookingId);
+        assertAssignedPro(proId, booking);
+        transition(booking, BookingStatus.ON_THE_WAY, proId, "Professional is on the way");
+        booking.setOnTheWayAt(Instant.now());
         notificationService.notifyUser(booking.getCustomerId(), "BOOKING_UPDATE",
-                "Booking update", "Your booking " + booking.getCode() + " is now " + target.name());
-        return mapper.toResponse(booking);
+                "Professional on the way", "Your professional is on the way for booking " + booking.getCode());
+        return mapper.toResponse(booking, proId);
+    }
+
+    @Transactional
+    public BookingResponse markArrived(UUID proId, UUID bookingId) {
+        Booking booking = require(bookingId);
+        assertAssignedPro(proId, booking);
+        transition(booking, BookingStatus.ARRIVED, proId, "Professional arrived");
+        booking.setArrivedAt(Instant.now());
+        notificationService.notifyUser(booking.getCustomerId(), "BOOKING_UPDATE",
+                "Professional arrived", "Your professional has arrived for booking " + booking.getCode());
+        return mapper.toResponse(booking, proId);
+    }
+
+    @Transactional
+    public BookingResponse startWork(UUID proId, UUID bookingId) {
+        Booking booking = require(bookingId);
+        assertAssignedPro(proId, booking);
+        transition(booking, BookingStatus.IN_PROGRESS, proId, "Work started");
+        booking.setWorkStartedAt(Instant.now());
+        notificationService.notifyUser(booking.getCustomerId(), "BOOKING_UPDATE",
+                "Work started", "Work has started for booking " + booking.getCode());
+        return mapper.toResponse(booking, proId);
+    }
+
+    @Transactional
+    public BookingResponse markWorkCompleted(UUID proId, UUID bookingId) {
+        Booking booking = require(bookingId);
+        assertAssignedPro(proId, booking);
+        String otp = generateCompletionOtp();
+        booking.setCompletionOtpCode(otp);
+        booking.setCompletionOtpHash(hashOtp(otp));
+        booking.setCompletionOtpExpiresAt(Instant.now().plus(COMPLETION_OTP_TTL));
+        transition(booking, BookingStatus.COMPLETED_PENDING_OTP, proId, "Work completed; waiting for customer OTP");
+        booking.setWorkCompletedAt(Instant.now());
+        notificationService.notifyUser(booking.getCustomerId(), "BOOKING_COMPLETION_OTP",
+                "Confirm completion", "Share the OTP only after the work is fully completed.");
+        return mapper.toResponse(booking, proId);
+    }
+
+    @Transactional
+    public BookingResponse verifyCompletionOtp(UUID proId, UUID bookingId, String otp) {
+        Booking booking = require(bookingId);
+        assertAssignedPro(proId, booking);
+        if (booking.getStatus() != BookingStatus.COMPLETED_PENDING_OTP) {
+            throw new BadRequestException("OTP_NOT_EXPECTED", "This booking is not waiting for completion OTP.");
+        }
+        if (otp == null || otp.isBlank() || !hashOtp(otp.trim()).equals(booking.getCompletionOtpHash())) {
+            throw new BadRequestException("INVALID_OTP", "Invalid completion OTP.");
+        }
+        if (booking.getCompletionOtpExpiresAt() != null && Instant.now().isAfter(booking.getCompletionOtpExpiresAt())) {
+            throw new BadRequestException("OTP_EXPIRED", "Completion OTP expired. Please mark work completed again.");
+        }
+        transition(booking, BookingStatus.COMPLETED, proId, "Completion OTP verified");
+        completeBooking(booking);
+        notificationService.notifyUser(booking.getCustomerId(), "BOOKING_COMPLETED",
+                "Booking completed", "Booking " + booking.getCode() + " is completed.");
+        return mapper.toResponse(booking, proId);
     }
 
     @Transactional(readOnly = true)
@@ -213,7 +296,8 @@ public class BookingService {
         }
         CancelQuote quote = computeCancelQuote(booking);
         BigDecimal balance = walletService.getWallet(userId).balance();
-        boolean sufficient = !quote.feeApplies() || balance.compareTo(quote.feeAmount()) >= 0;
+        BigDecimal locked = booking.getLockedAmount() == null ? BigDecimal.ZERO : booking.getLockedAmount();
+        boolean sufficient = !quote.feeApplies() || locked.compareTo(quote.feeAmount()) >= 0;
         return new CancelPreviewResponse(
                 true,
                 quote.feeApplies(),
@@ -247,10 +331,9 @@ public class BookingService {
                                 + preview.feeAmount().stripTrailingZeros().toPlainString()
                                 + " to your wallet.");
             }
-            walletService.debit(userId, preview.feeAmount(), TransactionReason.CANCELLATION_FEE,
-                    booking.getId(), "Cancellation fee for booking " + booking.getCode());
             booking.setCancellationFee(preview.feeAmount());
         }
+        refundLockedAmount(booking, preview.feeAmount());
         booking.setLateCancel(preview.lateCancel());
         booking.setCancellationReason(req.reasonCode().name());
         booking.setCancellationComment(req.comment());
@@ -263,7 +346,7 @@ public class BookingService {
             notificationService.notifyUser(booking.getProfessionalId(), "BOOKING_CANCELLED",
                     "Booking cancelled", "Booking " + booking.getCode() + " was cancelled");
         }
-        return mapper.toResponse(booking);
+        return mapper.toResponse(booking, userId);
     }
 
     @Transactional
@@ -280,9 +363,10 @@ public class BookingService {
         booking.setCancellationReason(note);
         booking.setCancelledBy(isPro ? "PROFESSIONAL" : "ADMIN");
         booking.setCancelledAt(Instant.now());
+        refundLockedAmount(booking, BigDecimal.ZERO);
         notificationService.notifyUser(booking.getCustomerId(), "BOOKING_CANCELLED",
                 "Booking cancelled", "Booking " + booking.getCode() + " was cancelled");
-        return mapper.toResponse(booking);
+        return mapper.toResponse(booking, userId);
     }
 
     @Transactional
@@ -317,7 +401,7 @@ public class BookingService {
                     "Booking rescheduled",
                     "Booking " + booking.getCode() + " was moved to " + req.scheduledDate());
         }
-        return mapper.toResponse(booking);
+        return mapper.toResponse(booking, userId);
     }
 
     @Transactional
@@ -331,7 +415,7 @@ public class BookingService {
         photo.setFileUrl(stored.url());
         photo.setUploadedBy(userId);
         photoRepository.save(photo);
-        return mapper.toResponse(booking);
+        return mapper.toResponse(booking, userId);
     }
 
     // ---- internals ----
@@ -400,7 +484,14 @@ public class BookingService {
     ) {}
 
     private void completeBooking(Booking booking) {
+        if (booking.getPaymentReleasedAt() != null) {
+            return;
+        }
         booking.setCompletedAt(Instant.now());
+        booking.setPaymentReleasedAt(Instant.now());
+        booking.setCompletionOtpCode(null);
+        booking.setCompletionOtpHash(null);
+        booking.setCompletionOtpExpiresAt(null);
         if (booking.getProfessionalId() != null) {
             walletService.credit(booking.getProfessionalId(), booking.getProEarning(),
                     TransactionReason.EARNING, booking.getId(),
@@ -409,6 +500,21 @@ public class BookingService {
                 p.setJobsCompleted(p.getJobsCompleted() + 1);
             });
         }
+        booking.setLockedAmount(BigDecimal.ZERO);
+    }
+
+    private void refundLockedAmount(Booking booking, BigDecimal feeAmount) {
+        BigDecimal locked = booking.getLockedAmount() == null ? BigDecimal.ZERO : booking.getLockedAmount();
+        if (locked.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        BigDecimal fee = feeAmount == null ? BigDecimal.ZERO : feeAmount;
+        BigDecimal refund = locked.subtract(fee);
+        if (refund.compareTo(BigDecimal.ZERO) > 0) {
+            walletService.credit(booking.getCustomerId(), refund, TransactionReason.REFUND,
+                    booking.getId(), "Refund for cancelled booking " + booking.getCode());
+        }
+        booking.setLockedAmount(BigDecimal.ZERO);
     }
 
     private void transition(Booking booking, BookingStatus target, UUID actor, String note) {
@@ -497,11 +603,26 @@ public class BookingService {
         return code;
     }
 
+    private String generateCompletionOtp() {
+        return String.valueOf(100_000 + RANDOM.nextInt(900_000));
+    }
+
+    private String hashOtp(String otp) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes = digest.digest(otp.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
+    }
+
     private List<BookingStatus> customerTab(String tab) {
         if (tab == null) return null;
         return switch (tab.toUpperCase()) {
             case "UPCOMING" -> List.of(BookingStatus.PENDING, BookingStatus.CONFIRMED,
-                    BookingStatus.ON_THE_WAY, BookingStatus.IN_PROGRESS);
+                    BookingStatus.ON_THE_WAY, BookingStatus.ARRIVED,
+                    BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED_PENDING_OTP);
             case "COMPLETED" -> List.of(BookingStatus.COMPLETED);
             case "CANCELLED" -> List.of(BookingStatus.CANCELLED, BookingStatus.REJECTED);
             default -> null;
@@ -512,7 +633,8 @@ public class BookingService {
         if (tab == null) return null;
         return switch (tab.toUpperCase()) {
             case "REQUESTS" -> List.of(BookingStatus.PENDING);
-            case "ACTIVE" -> List.of(BookingStatus.CONFIRMED, BookingStatus.ON_THE_WAY, BookingStatus.IN_PROGRESS);
+            case "ACTIVE" -> List.of(BookingStatus.CONFIRMED, BookingStatus.ON_THE_WAY,
+                    BookingStatus.ARRIVED, BookingStatus.IN_PROGRESS, BookingStatus.COMPLETED_PENDING_OTP);
             case "COMPLETED" -> List.of(BookingStatus.COMPLETED);
             default -> null;
         };

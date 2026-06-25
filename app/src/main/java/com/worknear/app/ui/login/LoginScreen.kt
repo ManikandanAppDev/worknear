@@ -40,7 +40,7 @@ import com.worknear.app.utils.WorkNearButtonType
 @Composable
 fun LoginScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToHome: () -> Unit,
+    onLoginSuccess: (newUser: Boolean) -> Unit,
     viewModel: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
@@ -55,7 +55,7 @@ fun LoginScreen(
         onPrimaryClick = {
             when (uiState.step) {
                 LoginStep.PHONE -> viewModel.requestOtp()
-                LoginStep.OTP -> viewModel.verifyOtp(onNavigateToHome)
+                LoginStep.OTP -> viewModel.verifyOtp(onLoginSuccess)
             }
         },
         onResend = viewModel::requestOtp

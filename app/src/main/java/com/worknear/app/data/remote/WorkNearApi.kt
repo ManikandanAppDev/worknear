@@ -1,6 +1,7 @@
 package com.worknear.app.data.remote
 
 import com.worknear.app.data.remote.dto.AddressDto
+import com.worknear.app.data.remote.dto.AddressRequestBody
 import com.worknear.app.data.remote.dto.ApiEnvelope
 import com.worknear.app.data.remote.dto.AuthData
 import com.worknear.app.data.remote.dto.BookingDto
@@ -19,13 +20,16 @@ import com.worknear.app.data.remote.dto.ProfessionalSummaryDto
 import com.worknear.app.data.remote.dto.RefreshBody
 import com.worknear.app.data.remote.dto.UpdateProfileBody
 import com.worknear.app.data.remote.dto.UserDto
+import com.worknear.app.data.remote.dto.VerifyCompletionOtpBody
 import com.worknear.app.data.remote.dto.WalletDto
 import com.worknear.app.data.remote.dto.WalletTransactionDto
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -73,6 +77,18 @@ interface WorkNearApi {
     @GET("api/v1/me/addresses")
     suspend fun addresses(): Response<ApiEnvelope<List<AddressDto>>>
 
+    @POST("api/v1/me/addresses")
+    suspend fun createAddress(@Body body: AddressRequestBody): Response<ApiEnvelope<AddressDto>>
+
+    @PUT("api/v1/me/addresses/{addressId}")
+    suspend fun updateAddress(
+        @Path("addressId") addressId: String,
+        @Body body: AddressRequestBody
+    ): Response<ApiEnvelope<AddressDto>>
+
+    @DELETE("api/v1/me/addresses/{addressId}")
+    suspend fun deleteAddress(@Path("addressId") addressId: String): Response<ApiEnvelope<Unit>>
+
     // ----- Bookings -----
     @POST("api/v1/bookings")
     suspend fun createBooking(@Body body: CreateBookingBody): Response<ApiEnvelope<BookingDto>>
@@ -95,8 +111,36 @@ interface WorkNearApi {
         @Body body: RescheduleBookingBody
     ): Response<ApiEnvelope<BookingDto>>
 
+    @POST("api/v1/bookings/{bookingId}/accept")
+    suspend fun acceptBooking(@Path("bookingId") bookingId: String): Response<ApiEnvelope<BookingDto>>
+
+    @POST("api/v1/bookings/{bookingId}/on-the-way")
+    suspend fun markOnTheWay(@Path("bookingId") bookingId: String): Response<ApiEnvelope<BookingDto>>
+
+    @POST("api/v1/bookings/{bookingId}/arrived")
+    suspend fun markArrived(@Path("bookingId") bookingId: String): Response<ApiEnvelope<BookingDto>>
+
+    @POST("api/v1/bookings/{bookingId}/start-work")
+    suspend fun startWork(@Path("bookingId") bookingId: String): Response<ApiEnvelope<BookingDto>>
+
+    @POST("api/v1/bookings/{bookingId}/mark-work-completed")
+    suspend fun markWorkCompleted(@Path("bookingId") bookingId: String): Response<ApiEnvelope<BookingDto>>
+
+    @POST("api/v1/bookings/{bookingId}/verify-completion-otp")
+    suspend fun verifyCompletionOtp(
+        @Path("bookingId") bookingId: String,
+        @Body body: VerifyCompletionOtpBody
+    ): Response<ApiEnvelope<BookingDto>>
+
     @GET("api/v1/bookings/customer")
     suspend fun customerBookings(
+        @Query("tab") tab: String? = null,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 20
+    ): Response<ApiEnvelope<PageDto<BookingDto>>>
+
+    @GET("api/v1/bookings/professional")
+    suspend fun professionalBookings(
         @Query("tab") tab: String? = null,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 20

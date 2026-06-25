@@ -64,7 +64,8 @@ class LoginViewModel(
         }
     }
 
-    fun verifyOtp(onSuccess: () -> Unit) {
+    /** [onSuccess] receives `true` when a brand-new account was just created. */
+    fun verifyOtp(onSuccess: (newUser: Boolean) -> Unit) {
         val phone = normalizePhone(_uiState.value.phone) ?: return
         val code = _uiState.value.otp
         if (code.length < 4) {
@@ -76,7 +77,7 @@ class LoginViewModel(
             when (val result = authRepository.verifyOtp(phone, code)) {
                 is ApiResult.Success -> {
                     _uiState.update { it.copy(isLoading = false) }
-                    onSuccess()
+                    onSuccess(result.data)
                 }
                 is ApiResult.Error -> _uiState.update {
                     it.copy(isLoading = false, errorMessage = result.message)
