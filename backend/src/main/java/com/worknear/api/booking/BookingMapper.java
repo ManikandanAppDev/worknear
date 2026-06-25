@@ -70,6 +70,7 @@ public class BookingMapper {
             case COMPLETED -> "Completed";
             case CANCELLED -> "Cancelled";
             case REJECTED -> "Rejected";
+            case NO_SHOW -> "Professional no-show";
         };
     }
 
